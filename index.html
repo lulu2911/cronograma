@@ -3,28 +3,521 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cronograma Ágil — Pendientes Oscar</title>
+<title>Cronograma — Equipo Apoyo a la Supervisión</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-<!-- ============================================================
-  INSTRUCCIONES — LEA ANTES DE SUBIR A GITHUB
-  ============================================================
-  1. Vaya a console.firebase.google.com
-  2. Abra su proyecto → Configuración ⚙️ → Aplicaciones → su app web
-  3. Copie los valores de firebaseConfig y péguelos abajo
-     reemplazando cada "PEGAR_AQUI_..." con su valor real.
-  4. Guarde el archivo y súbalo a GitHub.
-  ============================================================ -->
-
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.11.0/dist/tabler-icons.min.css">
+<style>
+:root{
+--c-bg:#0D0F14;--c-bg2:#13161D;--c-bg3:#1A1E28;--c-bg4:#20263A;
+--c-border:#2A3050;--c-border2:#333C58;
+--c-text:#E8EAF0;--c-text2:#9BA3BF;--c-text3:#5C6480;
+--c-accent:#4F8EF7;--c-green:#3ECFA0;--c-green2:#1E8A68;
+--c-amber:#F5A623;--c-red:#F76868;--c-purple:#A78BFA;
+--maye-col:#4F8EF7;--luisa-col:#A78BFA;--seba-col:#3ECFA0;
+--r:8px;--r2:12px;--r3:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--c-bg);color:var(--c-text);min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--c-bg2)}
+::-webkit-scrollbar-thumb{background:var(--c-border2);border-radius:10px}
+ 
+/* TOPBAR */
+.topbar{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.95);backdrop-filter:blur(16px);border-bottom:1px solid var(--c-border);padding:0 24px}
+.topbar-inner{display:flex;align-items:center;justify-content:space-between;height:54px;gap:16px}
+.topbar-brand{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.logo{width:30px;height:30px;background:linear-gradient(135deg,#4F8EF7,#A78BFA);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;flex-shrink:0}
+.topbar-brand h1{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;letter-spacing:.02em;color:var(--c-text)}
+.brand-sub{font-size:11px;color:var(--c-text3);margin-left:4px}
+.tab-bar{display:flex;gap:2px}
+.tab-btn{display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--c-text2);transition:all .2s;white-space:nowrap}
+.tab-btn:hover{background:var(--c-bg3);color:var(--c-text)}
+.tab-btn.active{background:var(--c-bg4);color:var(--c-text);box-shadow:0 0 0 1px var(--c-border)}
+.tab-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.topbar-actions{display:flex;gap:8px;align-items:center}
+.period-select,.print-btn{background:var(--c-bg3);border:1px solid var(--c-border);border-radius:var(--r);padding:5px 10px;font-size:11px;color:var(--c-text2);cursor:pointer;outline:none}
+.print-btn{display:flex;align-items:center;gap:5px;transition:all .15s}
+.print-btn:hover{border-color:var(--c-accent);color:var(--c-accent)}
+.save-btn{display:flex;align-items:center;gap:6px;padding:5px 13px;border-radius:var(--r);font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;border:1px solid;white-space:nowrap}
+.save-btn.idle{background:var(--c-bg3);border-color:var(--c-border);color:var(--c-text2)}
+.save-btn.dirty{background:rgba(245,166,35,.15);border-color:rgba(245,166,35,.5);color:var(--c-amber);animation:pulse-save 1.8s ease-in-out infinite}
+.save-btn.saving{background:rgba(79,142,247,.12);border-color:rgba(79,142,247,.4);color:var(--c-accent);pointer-events:none}
+.save-btn.saved{background:rgba(62,207,160,.12);border-color:rgba(62,207,160,.4);color:var(--c-green)}
+@keyframes pulse-save{0%,100%{box-shadow:0 0 0 0 rgba(245,166,35,.0)}50%{box-shadow:0 0 0 3px rgba(245,166,35,.25)}}
+.view-toggle{display:flex;gap:3px;background:var(--c-bg3);border:1px solid var(--c-border);border-radius:var(--r);padding:3px}
+.vt-btn{padding:4px 12px;border-radius:5px;font-size:11px;border:none;cursor:pointer;background:transparent;color:var(--c-text3);transition:all .15s;display:flex;align-items:center;gap:5px}
+.vt-btn.active{background:var(--c-bg4);color:var(--c-text);box-shadow:0 1px 4px rgba(0,0,0,.4)}
+ 
+/* MAIN */
+.main{padding:20px 24px 40px;max-width:1500px;margin:0 auto}
+ 
+/* KPIs */
+.kpi-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:18px}
+.kpi{background:var(--c-bg2);border:1px solid var(--c-border);border-radius:var(--r2);padding:14px 16px;display:flex;align-items:center;gap:12px;position:relative;overflow:hidden}
+.kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.k-teal::after{background:var(--c-green)}.k-blue::after{background:var(--c-accent)}
+.k-amber::after{background:var(--c-amber)}.k-red::after{background:var(--c-red)}.k-purple::after{background:var(--c-purple)}
+.kpi-ico{width:36px;height:36px;border-radius:var(--r);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.k-teal .kpi-ico{background:#0D3B2A;color:var(--c-green)}.k-blue .kpi-ico{background:#0D1F3A;color:var(--c-accent)}
+.k-amber .kpi-ico{background:#3A2500;color:var(--c-amber)}.k-red .kpi-ico{background:#3A1010;color:var(--c-red)}.k-purple .kpi-ico{background:#221840;color:var(--c-purple)}
+.kpi-val{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;line-height:1}
+.kpi-lbl{font-size:10px;color:var(--c-text3);margin-top:3px;text-transform:uppercase;letter-spacing:.06em}
+ 
+/* PROGRESS SECTION */
+.progress-section{background:var(--c-bg2);border:1px solid var(--c-border);border-radius:var(--r2);padding:16px 20px;margin-bottom:18px}
+.prog-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.prog-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:600}
+.prog-pct{font-family:'DM Mono',monospace;font-size:22px;font-weight:500;color:var(--c-green)}
+.prog-bars{display:flex;flex-direction:column;gap:10px}
+/* FIXED: wider name column so activity names are readable */
+.prog-row{display:grid;grid-template-columns:minmax(200px,280px) 1fr 68px;align-items:center;gap:14px}
+.prog-name{font-size:11px;color:var(--c-text2);display:flex;align-items:center;gap:7px;line-height:1.4;min-width:0}
+.prog-name-txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prog-bar-wrap{height:7px;background:var(--c-bg4);border-radius:4px;overflow:hidden}
+.prog-bar-fill{height:100%;border-radius:4px;transition:width .6s ease}
+.prog-num{font-family:'DM Mono',monospace;font-size:10px;color:var(--c-text3);text-align:right;white-space:nowrap}
+ 
+/* FILTER BAR */
+.filter-bar{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+.filter-label{font-size:11px;color:var(--c-text3);text-transform:uppercase;letter-spacing:.06em;flex-shrink:0}
+.week-filter-wrap{display:flex;gap:5px;flex-wrap:wrap}
+.wf-btn{padding:5px 11px;border-radius:20px;font-size:11px;border:1px solid var(--c-border);background:transparent;color:var(--c-text3);cursor:pointer;transition:all .15s;white-space:nowrap}
+.wf-btn:hover{border-color:var(--c-border2);color:var(--c-text2)}
+.wf-btn.active{background:var(--c-accent);border-color:var(--c-accent);color:#fff}
+.filter-sep{flex:1}
+.show-done-toggle{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--c-text2);cursor:pointer;user-select:none}
+.toggle-sw{width:32px;height:18px;border-radius:9px;background:var(--c-bg4);border:1px solid var(--c-border);position:relative;cursor:pointer;transition:background .2s;flex-shrink:0}
+.toggle-sw.on{background:var(--c-green);border-color:var(--c-green)}
+.toggle-sw::after{content:'';position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:#fff;transition:left .2s}
+.toggle-sw.on::after{left:16px}
+ 
+/* LEGEND */
+.legend-strip{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--c-text2);background:var(--c-bg2);border:1px solid var(--c-border);border-radius:20px;padding:3px 9px}
+ 
+/* WEEK SECTION */
+.week-section{margin-bottom:12px;border-radius:var(--r3);overflow:hidden;border:1px solid var(--c-border);background:var(--c-bg2)}
+.week-header{display:flex;align-items:center;gap:14px;padding:12px 18px;cursor:pointer;user-select:none;transition:background .15s}
+.week-header:hover{background:var(--c-bg3)}
+.week-badge{min-width:38px;height:38px;border-radius:var(--r);background:var(--c-bg4);border:1px solid var(--c-border);display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:11px;color:var(--c-text2);flex-shrink:0}
+.week-info{flex:1}
+.week-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:600}
+.week-focus{font-size:11px;color:var(--c-text2);margin-top:2px;font-style:italic}
+.week-meta{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.week-stat{font-size:11px;color:var(--c-text3);background:var(--c-bg4);border:1px solid var(--c-border);padding:3px 9px;border-radius:20px;font-family:'DM Mono',monospace;white-space:nowrap}
+.week-stat.complete{background:#0D3B2A;border-color:var(--c-green2);color:var(--c-green)}
+.week-chev{font-size:18px;color:var(--c-text3);transition:transform .2s;flex-shrink:0}
+.week-chev.open{transform:rotate(180deg)}
+.week-mini-bar{width:70px;height:4px;background:var(--c-bg4);border-radius:2px;overflow:hidden}
+.week-mini-fill{height:100%;background:var(--c-green);border-radius:2px;transition:width .4s}
+ 
+/* WEEK BODY */
+.week-body{display:none}
+.week-body.open{display:block}
+ 
+/* COLUMN HEADER */
+.col-header{display:grid;grid-template-columns:28px 1fr 90px 82px 82px 122px;gap:8px;padding:8px 18px;background:var(--c-bg);border-top:1px solid var(--c-border);border-bottom:1px solid var(--c-border)}
+.col-header span{font-size:9px;font-weight:600;color:var(--c-text3);text-transform:uppercase;letter-spacing:.08em;display:flex;align-items:center}
+ 
+/* ACTIVITY GROUP */
+.act-group{border-top:1px solid var(--c-border)}
+.act-group-header{display:flex;align-items:center;gap:10px;padding:10px 18px;background:var(--c-bg3);cursor:pointer;user-select:none}
+.act-group-header:hover{background:var(--c-bg4)}
+.act-group-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.act-group-title{font-size:12px;font-weight:600;color:var(--c-text);flex:1;line-height:1.4}
+.act-group-badge{font-size:9px;padding:2px 8px;border-radius:20px;font-family:'DM Mono',monospace;white-space:nowrap;flex-shrink:0}
+.act-group-progress{font-size:10px;color:var(--c-text3);font-family:'DM Mono',monospace;white-space:nowrap;flex-shrink:0}
+.act-group-chev{font-size:14px;color:var(--c-text3);transition:transform .2s;flex-shrink:0}
+.act-group-chev.open{transform:rotate(180deg)}
+/* Body starts OPEN, toggling adds .collapsed */
+.act-group-body{display:block}
+.act-group-body.collapsed{display:none}
+ 
+/* TASK ROW */
+.task-row{display:grid;grid-template-columns:28px 1fr 90px 82px 82px 122px;gap:8px;padding:9px 18px;border-bottom:1px solid rgba(42,48,80,.4);align-items:start;transition:background .1s}
+.task-row:last-child{border-bottom:none}
+.task-row:hover{background:rgba(26,30,40,.5)}
+.task-row.is-done{opacity:.42}
+.task-row.is-sub{padding-left:46px;background:rgba(13,15,20,.28)}
+.task-row.is-sub:hover{background:rgba(26,30,40,.45)}
+ 
+.chk{width:22px;height:22px;border-radius:6px;border:1.5px solid var(--c-border2);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:transparent;transition:all .15s;margin-top:1px}
+.chk.on{background:var(--c-green);border-color:var(--c-green)}
+.chk i{font-size:11px;color:#0D0F14;display:none}
+.chk.on i{display:block}
+.sub-chk{width:18px;height:18px;border-radius:5px;border-color:var(--c-border);margin-top:2px}
+ 
+.task-name{font-size:12px;line-height:1.5;color:var(--c-text)}
+.task-row.is-done .task-name{text-decoration:line-through;color:var(--c-text3)}
+.task-sub-lbl{font-size:10px;color:var(--c-text3);margin-top:2px}
+ 
+.prio-sel{width:100%;padding:4px 6px;border-radius:6px;font-size:10px;font-weight:500;cursor:pointer;border:1px solid;appearance:none;text-align:center;outline:none;background:transparent;font-family:'DM Mono',monospace}
+.prio-alta{background:rgba(247,104,104,.15);color:#F79898;border-color:rgba(247,104,104,.4)}
+.prio-media{background:rgba(245,166,35,.12);color:#F5C063;border-color:rgba(245,166,35,.35)}
+.prio-baja{background:rgba(62,207,160,.1);color:#3ECFA0;border-color:rgba(62,207,160,.3)}
+ 
+.date-inp{width:100%;padding:4px 6px;border:1px solid var(--c-border);border-radius:6px;font-size:10px;background:var(--c-bg3);color:var(--c-text2);cursor:pointer;outline:none;font-family:'DM Mono',monospace}
+.date-inp:focus{border-color:var(--c-accent)}
+ 
+.status-sel{width:100%;padding:4px 6px;border-radius:6px;font-size:10px;font-weight:500;cursor:pointer;border:1px solid;appearance:none;text-align:center;outline:none;background:transparent;font-family:'DM Mono',monospace}
+.st-pendiente{background:rgba(92,100,128,.15);color:#9BA3BF;border-color:rgba(92,100,128,.3)}
+.st-en-proceso{background:rgba(79,142,247,.15);color:#7BB3FF;border-color:rgba(79,142,247,.4)}
+.st-completado{background:rgba(62,207,160,.1);color:var(--c-green);border-color:rgba(62,207,160,.3)}
+.st-bloqueado{background:rgba(247,104,104,.15);color:#F79898;border-color:rgba(247,104,104,.4)}
+ 
+/* OBSERVATIONS */
+.obs-section{padding:12px 18px 16px;background:rgba(13,15,20,.5);border-top:1px solid var(--c-border)}
+.obs-section-title{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--c-text3);font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.obs-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.obs-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.obs-box{border-radius:var(--r);overflow:hidden;border:1px solid var(--c-border)}
+.obs-box-header{padding:7px 12px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;display:flex;align-items:center;gap:6px}
+.obs-box.maye .obs-box-header{background:rgba(79,142,247,.1);color:var(--maye-col);border-bottom:1px solid rgba(79,142,247,.2)}
+.obs-box.luisa .obs-box-header{background:rgba(167,139,250,.1);color:var(--luisa-col);border-bottom:1px solid rgba(167,139,250,.2)}
+.obs-box.seba .obs-box-header{background:rgba(62,207,160,.08);color:var(--seba-col);border-bottom:1px solid rgba(62,207,160,.2)}
+.obs-box.sup .obs-box-header{background:rgba(245,166,35,.08);color:var(--c-amber);border-bottom:1px solid rgba(245,166,35,.2)}
+.obs-ta{width:100%;min-height:72px;padding:9px 12px;border:none;background:var(--c-bg2);color:var(--c-text);font-size:11px;font-family:'Inter',sans-serif;resize:vertical;outline:none;line-height:1.6}
+.obs-ta::placeholder{color:var(--c-text3)}
+.obs-ta:focus{background:var(--c-bg3)}
+ 
+/* GANTT */
+#gantt-view{display:none}
+.gantt-wrap{background:var(--c-bg2);border:1px solid var(--c-border);border-radius:var(--r3);overflow:hidden;margin-bottom:18px}
+.gantt-hdr{padding:14px 20px;border-bottom:1px solid var(--c-border);display:flex;justify-content:space-between;align-items:center}
+.gantt-hdr-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:600}
+.gantt-scroll{overflow-x:auto;padding-bottom:12px}
+.gtable{border-collapse:collapse}
+.gtable th{background:var(--c-bg);padding:6px 8px;font-size:9px;font-weight:600;color:var(--c-text3);text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--c-border);white-space:nowrap;text-align:left}
+.gtable th.month-h{text-align:center;font-size:10px;color:var(--c-text2);background:var(--c-bg3);text-transform:capitalize}
+.gtable th.wk-h{text-align:center;min-width:46px;font-size:8px;color:var(--c-text3)}
+.gtable td{padding:6px 8px;border-bottom:1px solid rgba(42,48,80,.3);vertical-align:middle}
+.gtable tr:last-child td{border-bottom:none}
+.gtable tr:hover td{background:rgba(26,30,40,.45)}
+.g-act-name{font-size:11px;color:var(--c-text);max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}
+.g-pill{font-size:9px;padding:2px 7px;border-radius:20px;white-space:nowrap}
+.g-bar-td{padding:3px 2px}
+.g-bar{height:20px;position:relative;border-radius:3px;overflow:hidden}
+.g-bar-fill{position:absolute;inset:0;opacity:.6;border-radius:3px}
+.g-bar-prog{position:absolute;top:0;bottom:0;left:0;border-radius:3px;opacity:.9}
+ 
+/* FOOTER */
+.footer-bar{margin-top:28px;padding:14px 0;border-top:1px solid var(--c-border);display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--c-text3)}
+#last-update{display:flex;align-items:center;gap:4px;transition:color .3s}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{animation:spin 1s linear infinite;display:inline-block}
+ 
+/* EDIT / DELETE */
+.del-sub-btn{width:22px;height:22px;border:1px solid transparent;border-radius:5px;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:transparent;transition:all .15s;flex-shrink:0;margin-top:2px;font-size:13px}
+.task-row.is-sub:hover .del-sub-btn{color:var(--c-text3)}
+.del-sub-btn:hover{border-color:rgba(247,104,104,.5)!important;color:var(--c-red)!important;background:rgba(247,104,104,.1)!important}
+.add-sub-btn{display:flex;align-items:center;gap:5px;margin:4px 18px 6px 46px;padding:5px 12px;border:1px dashed var(--c-border);border-radius:6px;font-size:11px;color:var(--c-text3);background:transparent;cursor:pointer;transition:all .15s;width:fit-content}
+.add-sub-btn:hover{border-color:var(--c-accent);color:var(--c-accent);background:rgba(79,142,247,.06)}
+.del-act-btn{display:flex;align-items:center;gap:4px;padding:2px 8px;border:1px solid rgba(247,104,104,.3);border-radius:5px;font-size:9px;color:rgba(247,104,104,.6);background:transparent;cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0}
+.del-act-btn:hover{background:rgba(247,104,104,.15);border-color:var(--c-red);color:var(--c-red)}
+.add-act-strip{padding:10px 18px;border-top:1px dashed var(--c-border);background:transparent}
+.add-act-btn{display:flex;align-items:center;justify-content:center;gap:7px;padding:9px 16px;border:1px dashed var(--c-border);border-radius:8px;font-size:11px;color:var(--c-text3);background:transparent;cursor:pointer;transition:all .2s;width:100%}
+.add-act-btn:hover{border-color:var(--c-accent);color:var(--c-accent);background:rgba(79,142,247,.05)}
+ 
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);z-index:2000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--c-bg2);border:1px solid var(--c-border2);border-radius:var(--r3);padding:26px;width:100%;max-width:500px;box-shadow:0 24px 64px rgba(0,0,0,.7);transform:translateY(14px);transition:transform .2s}
+.modal-overlay.open .modal{transform:translateY(0)}
+.modal-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:3px;display:flex;align-items:center;gap:8px}
+.modal-sub{font-size:11px;color:var(--c-text3);margin-bottom:20px;line-height:1.5}
+.modal-field{margin-bottom:14px}
+.modal-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--c-text3);margin-bottom:5px;display:block}
+.modal-inp,.modal-sel,.modal-ta{width:100%;padding:8px 10px;border:1px solid var(--c-border);border-radius:var(--r);background:var(--c-bg3);color:var(--c-text);font-size:12px;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s}
+.modal-inp:focus,.modal-sel:focus,.modal-ta:focus{border-color:var(--c-accent)}
+.modal-ta{min-height:65px;resize:vertical;line-height:1.6}
+.modal-sel{cursor:pointer}
+.modal-2col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+.modal-cancel{padding:8px 18px;border:1px solid var(--c-border);border-radius:var(--r);font-size:12px;background:transparent;color:var(--c-text2);cursor:pointer;transition:all .15s}
+.modal-cancel:hover{background:var(--c-bg3)}
+.modal-ok{padding:8px 20px;border:none;border-radius:var(--r);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+.modal-ok.primary{background:var(--c-accent);color:#fff}
+.modal-ok.primary:hover{opacity:.85}
+.modal-ok.danger{background:rgba(247,104,104,.15);color:var(--c-red);border:1px solid rgba(247,104,104,.4)}
+.modal-ok.danger:hover{background:var(--c-red);color:#fff}
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "firebase/app":      "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js",
+    "firebase/database": "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js"
+  }
+}
+</script>
+</head>
+<body>
+ 
+<div class="topbar">
+<div class="topbar-inner">
+<div class="topbar-brand">
+<div class="logo"><i class="ti ti-chart-dots-3"></i></div>
+<div>
+<h1>Equipo Apoyo a la Supervisión</h1>
+<span class="brand-sub">DTZ · Mayo → Agosto 2026</span>
+</div>
+</div>
+<div class="tab-bar">
+<button class="tab-btn active" onclick="switchTab('maye')" id="tab-maye">
+<span class="tab-dot" style="background:var(--maye-col)"></span>Maye &amp; Luisa
+</button>
+<button class="tab-btn" onclick="switchTab('seba')" id="tab-seba">
+<span class="tab-dot" style="background:var(--seba-col)"></span>Sebastián
+</button>
+</div>
+<div class="topbar-actions">
+<div class="view-toggle">
+<button class="vt-btn active" id="vt-list" onclick="setView('list')"><i class="ti ti-list"></i> Lista</button>
+<button class="vt-btn" id="vt-gantt" onclick="setView('gantt')"><i class="ti ti-layout-board"></i> Gantt</button>
+</div>
+<select class="period-select" id="period-filter" onchange="applyPeriodFilter()">
+<option value="all">Todo el período</option>
+<option value="mayo">Mayo 2026</option>
+<option value="junio">Junio 2026</option>
+<option value="julio">Julio 2026</option>
+<option value="agosto">Agosto 2026</option>
+</select>
+<button class="save-btn idle" id="save-btn" onclick="manualSave()" title="Guardar todos los cambios en la nube">
+<i class="ti ti-device-floppy" id="save-ico"></i>
+<span id="save-lbl">Guardado</span>
+</button>
+<button class="print-btn" onclick="window.print()"><i class="ti ti-printer"></i> Exportar</button>
+</div>
+</div>
+</div>
+ 
+<!-- SYNC BANNER -->
+<div id="sync-banner"></div>
+ 
+<div class="main">
+<div class="kpi-strip">
+<div class="kpi k-teal"><div class="kpi-ico"><i class="ti ti-list-check"></i></div><div><div class="kpi-val" id="k-total">0</div><div class="kpi-lbl">Subactividades</div></div></div>
+<div class="kpi k-blue"><div class="kpi-ico"><i class="ti ti-circle-check"></i></div><div><div class="kpi-val" id="k-done">0</div><div class="kpi-lbl">Completadas</div></div></div>
+<div class="kpi k-amber"><div class="kpi-ico"><i class="ti ti-hourglass-half"></i></div><div><div class="kpi-val" id="k-pend">0</div><div class="kpi-lbl">Pendientes</div></div></div>
+<div class="kpi k-red"><div class="kpi-ico"><i class="ti ti-alert-circle"></i></div><div><div class="kpi-val" id="k-alta">0</div><div class="kpi-lbl">Prioridad Alta</div></div></div>
+<div class="kpi k-purple"><div class="kpi-ico"><i class="ti ti-chart-pie"></i></div><div><div class="kpi-val" id="k-pct">0%</div><div class="kpi-lbl">Cumplimiento</div></div></div>
+</div>
+ 
+<div class="progress-section">
+<div class="prog-header">
+<div class="prog-title">Indicador de Cumplimiento por Actividad</div>
+<div class="prog-pct" id="prog-pct-global">0%</div>
+</div>
+<div class="prog-bars" id="prog-bars"></div>
+</div>
+ 
+<div class="legend-strip" id="legend-strip"></div>
+ 
+<div class="filter-bar">
+<span class="filter-label">Semana</span>
+<div class="week-filter-wrap" id="week-filter-wrap"></div>
+<div class="filter-sep"></div>
+<label class="show-done-toggle">
+<div class="toggle-sw on" id="show-done-sw" onclick="toggleShowDone()"></div>
+Mostrar completadas
+</label>
+</div>
+ 
+<div id="list-view"><div id="weeks-root"></div></div>
+ 
+<div id="gantt-view">
+<div class="gantt-wrap">
+<div class="gantt-hdr">
+<div class="gantt-hdr-title">Vista Gantt — Planificación Mayo → Agosto 2026</div>
+<div style="font-size:11px;color:var(--c-text3)">Cada barra representa la duración planificada de cada actividad general</div>
+</div>
+<div class="gantt-scroll"><div id="gantt-content"></div></div>
+</div>
+</div>
+ 
+<div class="footer-bar">
+<span>Cronograma Equipo Apoyo a la Supervisión · <span style="font-family:'DM Mono',monospace">DTZ · v2.1</span></span>
+<span id="last-update" style="font-family:'DM Mono',monospace">—</span>
+</div>
+</div>
+ 
 <script type="module">
-  import { initializeApp }          from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getDatabase, ref, set, onValue, update, remove }
-                                    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+/* ════════════════════════════════════════════
+DATA
+════════════════════════════════════════════ */
+const PROJECTS = [
+{id:'p1', name:'Distribución Turnos', color:'#4F8EF7'},
+{id:'p2', name:'Comportamental', color:'#F5A623'},
+{id:'p3', name:'Tableros Power BI', color:'#A78BFA'},
+{id:'p4', name:'Fonías', color:'#22D3EE'},
+{id:'p5', name:'Tablero Control', color:'#FB923C'},
+{id:'p6', name:'Formato Notas', color:'#F472B6'},
+{id:'p7', name:'Post Operacional', color:'#3ECFA0'},
+{id:'p8', name:'Tiempos de Ciclo', color:'#818CF8'},
+{id:'p9', name:'Debido Proceso', color:'#34D399'},
+{id:'p10',name:'T. Entre Paradas', color:'#F87171'},
+{id:'p11',name:'IRP Seguimiento', color:'#FBBF24'},
+{id:'p12',name:'Proporcionalidad', color:'#2DD4BF'},
+{id:'s1', name:'Soporte Técnico', color:'#3ECFA0'},
+{id:'s2', name:'Fonías Diarias', color:'#22D3EE'},
+{id:'s3', name:'Formato Notas Op.', color:'#F472B6'},
+{id:'s4', name:'Post Operacional', color:'#FB923C'},
+{id:'s5', name:'Debido Proceso KM', color:'#A78BFA'},
+];
+ 
+const WEEKS = [
+{id:'w01',lbl:'S01',dates:'12–16 may',full:'12–16 mayo 2026', month:'mayo', start:'2026-05-12',end:'2026-05-16',focus:'Arranque: distribución de turnos'},
+{id:'w02',lbl:'S02',dates:'18–23 may',full:'18–23 mayo 2026', month:'mayo', start:'2026-05-18',end:'2026-05-23',focus:'Comportamental + Fonías'},
+{id:'w03',lbl:'S03',dates:'26–30 may',full:'26–30 mayo 2026', month:'mayo', start:'2026-05-26',end:'2026-05-30',focus:'Lógica automática + IRP'},
+{id:'w04',lbl:'S04',dates:'2–6 jun', full:'2–6 junio 2026', month:'junio', start:'2026-06-02',end:'2026-06-06',focus:'Tableros Power BI – histórico'},
+{id:'w05',lbl:'S05',dates:'9–13 jun', full:'9–13 junio 2026', month:'junio', start:'2026-06-09',end:'2026-06-13',focus:'Tablero control consistencia'},
+{id:'w06',lbl:'S06',dates:'16–20 jun',full:'16–20 junio 2026', month:'junio', start:'2026-06-16',end:'2026-06-20',focus:'Formato notas + Power Automate'},
+{id:'w07',lbl:'S07',dates:'23–27 jun',full:'23–27 junio 2026', month:'junio', start:'2026-06-23',end:'2026-06-27',focus:'Equipo post operacional'},
+{id:'w08',lbl:'S08',dates:'30j–4jul', full:'30 jun–4 jul 2026',month:'julio', start:'2026-06-30',end:'2026-07-04',focus:'Tiempos ciclo + cierre ajustes'},
+{id:'w09',lbl:'S09',dates:'7–11 jul', full:'7–11 julio 2026', month:'julio', start:'2026-07-07',end:'2026-07-11',focus:'Debido proceso – macro y tablero'},
+{id:'w10',lbl:'S10',dates:'14–18 jul',full:'14–18 julio 2026', month:'julio', start:'2026-07-14',end:'2026-07-18',focus:'Velocidades + IRP seguimiento'},
+{id:'w11',lbl:'S11',dates:'21–25 jul',full:'21–25 julio 2026', month:'julio', start:'2026-07-21',end:'2026-07-25',focus:'Reportes automáticos Python/PBI'},
+{id:'w12',lbl:'S12',dates:'28j–1ago', full:'28 jul–1 ago 2026',month:'agosto',start:'2026-07-28',end:'2026-08-01',focus:'Consolidación y pruebas'},
+{id:'w13',lbl:'S13',dates:'4–8 ago', full:'4–8 agosto 2026', month:'agosto',start:'2026-08-04',end:'2026-08-08',focus:'Socialización y ajustes finales'},
+{id:'w14',lbl:'S14',dates:'11–15 ago',full:'11–15 agosto 2026',month:'agosto',start:'2026-08-11',end:'2026-08-15',focus:'Documentación y entregables'},
+{id:'w15',lbl:'S15',dates:'18–22 ago',full:'18–22 agosto 2026',month:'agosto',start:'2026-08-18',end:'2026-08-22',focus:'Cierre y transferencia'},
+{id:'w16',lbl:'S16',dates:'25–29 ago',full:'25–29 agosto 2026',month:'agosto',start:'2026-08-25',end:'2026-08-29',focus:'Revisión final y presentación'},
+];
+ 
+// Prioridades tomadas del documento Word (11 mayo 2026)
+const ACTS_MAYE = [
+{id:'A8', proj:'p8', week:'w01', endWeek:'w01', prio:'alta',
+name:'Ajustes finales y cierre tablero de tiempos de ciclo – equipo táctico y de programación',
+subs:['Consolidar observaciones y retroalimentaciones del equipo táctico y de programación','Ejecutar ajustes funcionales, operativos y visuales solicitados','Validar consistencia, funcionamiento y estabilidad de los ajustes implementados','Realizar pruebas finales de operación y visualización de información','Documentar cambios y mejoras aplicadas respecto a las observaciones recibidas','Generar comunicación formal de cierre de ajustes al equipo táctico y de programación']},
+ 
+{id:'A9', proj:'p9', week:'w01', endWeek:'w10', prio:'alta',
+name:'Validación, ajuste y socialización de herramientas de seguimiento de debido proceso',
+subs:['Revisar y validar la macro de debido proceso con ajustes solicitados por Nini','Verificar funcionamiento de la macro con metodología actual del proceso','Incorporar mejoras identificadas durante validación funcional de la herramienta','Ejecutar pruebas operativas: estabilidad, trazabilidad y consistencia de información','Socializar versión ajustada de la macro con usuarios responsables del proceso','Recopilar retroalimentación de personas encargadas de validar el tablero','Evaluar observaciones, oportunidades de mejora y requerimientos adicionales','Analizar viabilidad funcional y técnica de los ajustes propuestos por usuarios','Implementar ajustes priorizados sobre el tablero de seguimiento de debido proceso','Validar consistencia visual, operativa y metodológica del tablero ajustado','Realizar socialización general con todo el equipo de debido proceso','Documentar recomendaciones, mejoras futuras y lineamientos de uso del tablero y macro']},
+ 
+{id:'A2', proj:'p2', week:'w01', endWeek:'w03', prio:'alta',
+name:'Actualizar y automatizar indicador comportamental y llegadas tarde de técnicos',
+subs:['Diseñar y crear formulario digital para registro de llegadas tarde y novedades comportamentales','Definir campos, categorías de novedades y criterios de clasificación','Configurar almacenamiento y consolidación automática mediante Excel derivado de Microsoft Forms','Realizar depuración, transformación y estructuración de la base de datos para análisis','Evaluar y proponer herramienta para generación automática de informes individuales','Diseñar plantilla estandarizada de informes de llegadas tarde','Configurar automatización de generación de informes a partir de la base consolidada','Diseñar flujo administrativo en Power Automate para envío de informes (Óscar → Rafael)','Configurar notificaciones, estados de aprobación y trazabilidad documental en el flujo','Ejecutar pruebas funcionales del formulario, correspondencia y flujo automatizado','Realizar ajustes finales e implementación de la solución integral de seguimiento comportamental']},
+ 
+{id:'A11',proj:'p11',week:'w01', endWeek:'w03', prio:'alta',
+name:'Seguimiento y validación de ajustes implementados al indicador IRP',
+subs:['Revisar y validar novedades y ajustes reportados por equipo post operacional y revisiones internas','Realizar seguimiento a correcciones implementadas y socializar cambios sobre el indicador IRP','Ajustar los cambios en el tablero si hay lugar a modificaciones']},
+ 
+{id:'A7', proj:'p7', week:'w01', endWeek:'w10', prio:'alta',
+name:'Etapa 3: Fortalecimiento equipo post operacional – reestructuración y estandarización metodológica',
+subs:['Definir alcance, objetivos y modelo de funcionamiento del equipo post operacional','Establecer lineamientos y competencias para evaluación integral de concesionarios','Diseñar metodología estandarizada de evaluación y seguimiento de concesionarios','Desarrollar herramienta tipo "hoja de vida / ruta histórica del concesionario"','Estructurar criterios homogéneos para identificación y análisis de problemáticas','Proponer catálogo de temas y lenguaje estandarizado para el equipo post operacional','Diseñar lineamientos y formatos de análisis para uniformidad en evaluaciones','Implementar sesiones activas de trabajo colaborativo para socialización de problemáticas','Establecer espacios periódicos de retroalimentación y transferencia de conocimiento','Diseñar flujograma jurídico y administrativo para gestión y escalamiento de hallazgos','Definir rutas de actuación, responsables, tiempos y consecuencias por tipo de hallazgo','Diseñar indicadores y mecanismos de seguimiento de la nueva metodología','Realizar validación funcional de herramientas, formatos y metodologías propuestas','Socializar nueva estructura operativa con el equipo post operacional y actores relacionados']},
+ 
+{id:'A3', proj:'p3', week:'w01', endWeek:'w06', prio:'alta',
+name:'Actualizar, optimizar y estandarizar tableros de seguimiento operativo y administrativo',
+subs:['Actualizar información histórica noviembre 2025 – abril 2026 (tableros técnicos)','Validar, depurar y consolidar fuentes de información operativa (fonías y sesiones LG)','Actualizar indicador comportamental con nueva estructura de registros y novedades','Actualizar indicador de puntualidad con ingresos y sesiones FMS LG','Actualizar indicador de cumplimiento: ausencias, permisos, incapacidades y novedades','Ajustar cálculo y visualización del indicador de fonías – nueva metodología','Levantar requerimientos funcionales y metodológicos del indicador IRP','Realizar cruce de técnicos, horarios y rutas asignadas para IRP','Diseñar lógica de cálculo, validación y visualización del indicador IRP','Evaluar resultados operativos obtenidos por técnico y ruta','Socializar metodología, alcance e interpretación del indicador IRP con el equipo','Incorporar IRP como nuevo componente de seguimiento operacional en los tableros','Actualizar información histórica personal misional administrativo Nov25–Abr26','Rediseñar formato de reporte PDF mensual con enfoque gerencial y ejecutivo','Configurar generación periódica de reportes mensuales automatizados','Diseñar formato de reporte semanal (fonías e IRP)','Ajustar visualizaciones y segmentaciones para seguimiento individual de desempeño','Validar funcionamiento y consistencia de reportes automatizados','Desarrollar código Python para generación automática de informes en Power BI vía Power Automate']},
+ 
+{id:'A1', proj:'p1', week:'w02', endWeek:'w03', prio:'alta',
+name:'Distribución automática de turnos y controles operativos ante novedades de asistencia',
+subs:['Levantar y documentar las reglas operativas y criterios de redistribución de turnos','Definir criterios de priorización para minimizar afectaciones sobre programación inicial','Diseñar interfaz de validación de asistencia mediante checklist de técnicos programados','Configurar opciones para registrar ausencias, ingresos tardíos y novedades operativas','Desarrollar lógica automática de reasignación de controles y actividades operativas','Parametrizar restricciones operativas, balance de carga y disponibilidad de técnicos','Implementar actualización dinámica de la programación en tiempo real ante cambios','Ejecutar pruebas funcionales con diferentes escenarios operativos y de contingencia','Ajustar y optimizar con base en resultados de pruebas y retroalimentación de usuarios','Implementación final y socialización de la herramienta con personal operativo']},
+ 
+{id:'A4', proj:'p4', week:'w01', endWeek:'w03', prio:'media',
+name:'Ajustar y optimizar tablero de fonías con nueva metodología de cálculo para seguimiento diario',
+subs:['Diseñar nueva visualización orientada al seguimiento diario del indicador de fonías','Implementar cálculo basado en promedio para análisis diario del indicador','Mantener el cálculo actual como metodología oficial para mediciones semanales y mensuales','Parametrizar el tablero para diferenciar metodología según periodicidad de análisis','Analizar tablero de Masivo Capital e incluir elementos visuales relevantes']},
+ 
+{id:'A6', proj:'p6', week:'w04', endWeek:'w06', prio:'media',
+name:'Adaptar e integrar formato de notas de Valeria al entorno operativo zonal y Centro de Control',
+subs:['Revisar y analizar estructura, alcance y funcionalidad del trabajo de Valeria','Identificar requerimientos operativos del entorno zonal y del Centro de Control','Ajustar estructura, campos y lógica del formato de notas para la operación zonal','Incorporar validaciones y controles de calidad y consistencia de información','Parametrizar el formato para uso operativo de enlaces y personal del Centro de Control','Realizar pruebas funcionales y validaciones con escenarios operativos reales','Ajustar formato con base en observaciones y retroalimentación de usuarios operativos','Dejar configurada y lista la versión final del formato para implementación en Centro de Control']},
+ 
+{id:'A10',proj:'p10',week:'w07', endWeek:'w07', prio:'media',
+name:'Ajustar tablero tiempo entre paradas con cálculo de velocidades operativas (v = d/t)',
+subs:['Revisar y validar la estructura actual del tablero y las fuentes de información','Implementar cálculo de velocidad operacional a partir de tiempo y distancia (v = d/t)','Ajustar visualizaciones e indicadores para análisis operativo','Validar consistencia de resultados y funcionamiento del tablero ajustado','Socializar cambios y metodología implementada con el equipo operativo']},
+ 
+{id:'A5', proj:'p5', week:'w05', endWeek:'w07', prio:'baja',
+name:'Diseñar e implementar tablero de control para consistencia de información operativa del concesionario',
+subs:['Levantar requerimientos funcionales y definir alcance del tablero de control','Identificar y consolidar fuentes: eliminación de viajes, notas, vehículos inmovilizados, tickets SIRCI','Crear código en Python para transcribir fonías a texto y generar comparativos de reportes','Realizar procesos de depuración, homologación y validación de calidad de datos','Desarrollar lógica de comparación y validación de consistencia entre novedades y soportes','Diseñar indicadores de control: eliminaciones de notas, inmovilizaciones y tickets SIRCI','Implementar alertas e identificadores de inconsistencias, duplicidades o posibles omisiones','Diseñar visualizaciones gerenciales y operativas para trazabilidad de novedades','Validar consistencia y funcionamiento del tablero con casos reales e históricos','Ajustar tablero con base en resultados de validación y retroalimentación operativa','Implementar versión final y socializar herramienta de control con usuarios responsables','Realizar análisis de efectividad de eliminaciones de técnicos por zona (referencia Masivo Capital)']},
+ 
+{id:'A12',proj:'p12',week:'w02',endWeek:'w03',prio:'media',
+name:'Ajustes a propuesta de proporcionalidad: mapa en carrete y distribuciones automáticas y manuales',
+subs:['Generar ajustes a la propuesta de proporcionalidad relacionadas con mapa en carrete','Generar distribuciones automáticas a partir de los criterios de proporcionalidad definidos','Implementar distribuciones manuales en paralelo con las distribuciones automáticas','Validar consistencia y coherencia entre distribuciones automáticas y manuales generadas','Ajustar visualización del mapa en carrete conforme a los resultados de distribución obtenidos']},
+];
+ 
+const ACTS_SEBA = [
+{id:'S1',proj:'s1',week:'w01',endWeek:'w16',prio:'alta',
+name:'Soporte técnico y operativo transversal a todos los procesos del equipo zonal',
+subs:['Brindar apoyo técnico en requerimientos transversales solicitados por el equipo','Apoyar implementación, seguimiento y socialización de herramientas y tableros','Documentar soporte brindado y registrar incidencias técnicas resueltas','Proponer mejoras técnicas en herramientas y procesos del equipo zonal']},
+ 
+{id:'S2',proj:'s2',week:'w01',endWeek:'w16',prio:'alta',
+name:'Generación, seguimiento y reporte diario de informe de fonías',
+subs:['Generar informe de fonías diario mediante el tablero ajustado','Validar consistencia y actualización de la información reportada en tablero de fonías','Reportar resultados diarios al responsable del proceso de fonías','Identificar anomalías o inconsistencias en datos reportados y escalarlas','Mantener registro histórico de indicadores diarios de fonías']},
+ 
+{id:'S3',proj:'s3',week:'w02',endWeek:'w07',prio:'alta',
+name:'Socialización, capacitación y seguimiento al nuevo formato de notas operativas',
+subs:['Socializar y capacitar al personal operativo sobre el nuevo formato de notas','Realizar seguimiento a la implementación y uso adecuado del formato de notas','Documentar estructura, funcionamiento y lineamientos de uso del formato','Identificar dificultades operativas en el uso del formato y reportar al equipo','Apoyar ajustes al formato con base en retroalimentación operativa']},
+ 
+{id:'S4',proj:'s4',week:'w04',endWeek:'w11',prio:'media',
+name:'Apoyo a sesiones activas de trabajo colaborativo del equipo post operacional',
+subs:['Apoyar el desarrollo de sesiones activas de trabajo colaborativo del equipo post operacional','Participar en análisis de problemáticas operativas entre zonas y concesionarios','Apoyar identificación y replicabilidad de buenas prácticas y oportunidades de mejora','Documentar conclusiones y compromisos derivados de sesiones colaborativas','Dar seguimiento a compromisos adquiridos en sesiones de trabajo colaborativo']},
+ 
+{id:'S5',proj:'s5',week:'w05',endWeek:'w13',prio:'media',
+name:'Seguimiento, análisis y propuesta de mejoras para casos de kilometraje en debido proceso',
+subs:['Realizar seguimiento a casos recurrentes de kilometraje en el proceso de debido proceso','Analizar causas raíz de los casos de kilometraje identificados','Proponer mejoras para minimizar casos recurrentes asociados a kilometraje','Consolidar hallazgos y recomendaciones en documento de análisis','Socializar hallazgos y propuestas con el equipo responsable']},
+];
+ 
+/* ════════════════════════════════════════════
+STATE + JSONBIN SYNC
+════════════════════════════════════════════ */
+let TAB='maye', VIEW='list', W_FILTER='all', PERIOD='all', SHOW_DONE=true;
+let ST={checkedSubs:{},actStatus:{},actPrio:{},obsData:{}};
+let _saveTimer=null, _pollTimer=null, _binId=null, _lastHash='';
+let _dirty=false; // tracks unsaved changes
+ 
+/* ── Save button UI ── */
+function setSaveBtn(state){
+const btn=document.getElementById('save-btn');
+const ico=document.getElementById('save-ico');
+const lbl=document.getElementById('save-lbl');
+if(!btn||!ico||!lbl)return;
+btn.className='save-btn '+state;
+const cfg={
+idle: {icon:'ti-device-floppy', txt:'Guardado'},
+dirty: {icon:'ti-device-floppy', txt:'Guardar cambios'},
+saving: {icon:'ti-loader-2 spin', txt:'Guardando…'},
+saved: {icon:'ti-circle-check', txt:'Guardado'}
+};
+const c=cfg[state]||cfg.idle;
+ico.className='ti '+c.icon;
+lbl.textContent=c.txt;
+if(state==='saved'){setTimeout(()=>{if(!_dirty)setSaveBtn('idle');},2500);}
+}
+ 
+function markDirty(){
+_dirty=true;
+setSaveBtn('dirty');
+}
+ 
+async function manualSave(){
+if(!_dirty)return;
+setSaveBtn('saving');
+localSave();
+await cloudSave();
+_dirty=false;
+setSaveBtn('saved');
+}
+ 
+/* ── Warn before leaving with unsaved changes ── */
+window.addEventListener('beforeunload',e=>{
+if(_dirty){e.preventDefault();e.returnValue='Tienes cambios sin guardar. ¿Seguro que quieres salir?';}
+});
+ 
+// ══════════════════════════════════════════════════════
+// FIREBASE REALTIME DATABASE — SINCRONIZACIÓN EN TIEMPO REAL
+// ══════════════════════════════════════════════════════
+// INSTRUCCIONES (solo una vez):
+//  1. Vaya a console.firebase.google.com → su proyecto
+//     → Configuración ⚙️ → Aplicaciones → su app web
+//  2. Reemplace cada "PEGAR_AQUI_..." con su valor real.
+// ══════════════════════════════════════════════════════
 
-  // ── PEGUE AQUÍ SUS CLAVES DE FIREBASE ──────────────────────
-  const firebaseConfig = {
+import { initializeApp }                          from "firebase/app";
+import { getDatabase, ref, set, onValue }         from "firebase/database";
+
+ const firebaseConfig = {
     apiKey:            "AIzaSyD73rC4QPv_I8RtLMx1mfmT991gnTOHS7c",
     authDomain:        "cronograma-actividades-3febf.firebaseapp.com",
     databaseURL:       "https://cronograma-actividades-3febf-default-rtdb.firebaseio.com",
@@ -33,490 +526,715 @@
     messagingSenderId: "77108164236",
     appId:             "1:77108164236:web:3b9f9b42c0897691a96da9"
   };
-  // ───────────────────────────────────────────────────────────
 
-  const app = initializeApp(firebaseConfig);
-  const db  = getDatabase(app);
-  const TASKS_REF = ref(db, 'tasks');
+const _fbApp     = initializeApp(firebaseConfig);
+const _fbDB      = getDatabase(_fbApp);
+const _CRONO_REF = ref(_fbDB, 'cronograma_dtz');
+let   _fbListener = null;
 
-  // ── Datos iniciales (se cargan solo la primera vez) ────────
-  const INITIAL_TASKS = [
-    {id:0,  text:"Distribución automática enlace (reemplazo Juanito)",              proj:0, week:0, prio:"alta",  start:"2026-05-12", end:"2026-05-12", done:false},
-    {id:1,  text:"Solicitud Hildebrando – IRP",                                     proj:4, week:0, prio:"alta",  start:"2026-05-12", end:"2026-05-13", done:false},
-    {id:2,  text:"Solicitud Hildebrando – velocidades entre paradas",               proj:4, week:0, prio:"alta",  start:"2026-05-12", end:"2026-05-13", done:false},
-    {id:3,  text:"Hablar con Sebastián – casos debido proceso",                     proj:6, week:0, prio:"media", start:"2026-05-14", end:"2026-05-14", done:false},
-    {id:4,  text:"Implementar cálculo de fonias – nueva metodología",               proj:1, week:1, prio:"alta",  start:"2026-05-19", end:"2026-05-21", done:false},
-    {id:5,  text:"Fonias Juan Sebastián Rocha",                                     proj:1, week:1, prio:"media", start:"2026-05-19", end:"2026-05-22", done:false},
-    {id:6,  text:"Revisar tablero fonias enviado a Masivo Capital",                 proj:1, week:1, prio:"alta",  start:"2026-05-20", end:"2026-05-21", done:false},
-    {id:7,  text:"Ajustar tablero fonias al formato Masivo Capital",                proj:1, week:1, prio:"alta",  start:"2026-05-22", end:"2026-05-23", done:false},
-    {id:8,  text:"Comportamental – actualizar",                                     proj:2, week:2, prio:"alta",  start:"2026-05-26", end:"2026-05-27", done:false},
-    {id:9,  text:"Buscar retrasos",                                                 proj:2, week:2, prio:"media", start:"2026-05-26", end:"2026-05-27", done:false},
-    {id:10, text:"Unificar comportamental y retrasos",                              proj:2, week:2, prio:"media", start:"2026-05-28", end:"2026-05-29", done:false},
-    {id:11, text:"Actualizar tablero técnicos y misionales",                        proj:3, week:2, prio:"alta",  start:"2026-05-26", end:"2026-05-28", done:false},
-    {id:12, text:"Ajuste macro y validación tablero Power BI",                      proj:3, week:3, prio:"alta",  start:"2026-06-02", end:"2026-06-04", done:false},
-    {id:13, text:"Validar respaldo eliminaciones (notas / varados / Sirci / tickets)", proj:3, week:3, prio:"media", start:"2026-06-03", end:"2026-06-05", done:false},
-    {id:14, text:"Indicadores semanales + informe operativo",                       proj:3, week:3, prio:"alta",  start:"2026-06-02", end:"2026-06-06", done:false},
-    {id:15, text:"Datos históricos nov 2025 – abr 2026 (requiere ingresos)",        proj:4, week:3, prio:"media", start:"2026-06-04", end:"2026-06-06", done:false},
-    {id:16, text:"Ajustes tiempos de ciclo",                                        proj:4, week:4, prio:"baja",  start:"2026-06-09", end:"2026-06-11", done:false},
-    {id:17, text:"Nuevo formato Valeria → trasladar a zonal",                       proj:5, week:4, prio:"media", start:"2026-06-09", end:"2026-06-11", done:false},
-    {id:18, text:"Herramientas equipo post (hoja ruta, lenguaje, sesiones, flujograma jurídico)", proj:5, week:4, prio:"baja", start:"2026-06-10", end:"2026-06-13", done:false},
-    {id:19, text:"Fonias – transcribir (eliminación vs notas)",                     proj:1, week:4, prio:"baja",  start:"2026-06-12", end:"2026-06-13", done:false},
-  ];
+// ── localStorage como respaldo offline ──
+function localSave(){
+  try{ localStorage.setItem('crono_dtz_v3', JSON.stringify(ST)); }catch(e){}
+}
 
-  let tasks   = [];
-  let nextId  = 20;
-  let saving  = false;
-  const openWeeks = new Set([0,1,2,3,4]);
+function localLoad(){
+  try{ const s=localStorage.getItem('crono_dtz_v3'); if(s) ST=JSON.parse(s); }catch(e){}
+}
 
-  // ── Escuchar cambios en tiempo real ───────────────────────
-  onValue(TASKS_REF, snapshot => {
-    const data = snapshot.val();
-    if (data) {
-      tasks  = Object.values(data).sort((a,b) => a.id - b.id);
-      nextId = Math.max(...tasks.map(t => t.id)) + 1;
-    } else {
-      // Primera vez: guardar datos iniciales
-      tasks = INITIAL_TASKS;
-      saveAll(true);
+// ── Guardar en Firebase (debounced 800ms) ──
+function save(){
+  localSave();
+  markDirty();
+  setStatus('saving','Guardando…');
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(async () => {
+    await cloudSave();
+    _dirty = false;
+    setSaveBtn('saved');
+  }, 800);
+}
+
+async function cloudSave(){
+  try{
+    await set(_CRONO_REF, ST);
+    setStatus('cloud','Sincronizado · ' + new Date().toLocaleTimeString('es-CO'));
+  }catch(e){
+    setStatus('warn','Error al guardar — verifique conexión');
+  }
+}
+
+// ── Escucha en tiempo real (sustituye el polling de 8s) ──
+function startPolling(){
+  if(_fbListener) return; // ya activo
+  _fbListener = onValue(_CRONO_REF, (snapshot) => {
+    const remote = snapshot.val();
+    if(remote && JSON.stringify(remote) !== JSON.stringify(ST)){
+      ST = { ...ST, ...remote };
+      localSave();
+      render();
+      setStatus('cloud','Sincronizado · ' + new Date().toLocaleTimeString('es-CO'));
     }
-    render();
-    updateStats();
-    showStatus('sincronizado');
+  }, () => {
+    setStatus('warn','Sin conexión en tiempo real');
   });
+}
 
-  // ── Guardar todo en Firebase ──────────────────────────────
-  function saveAll(silent = false) {
-    if (!silent) showStatus('guardando');
-    const obj = {};
-    tasks.forEach(t => { obj['t' + t.id] = t; });
-    set(TASKS_REF, obj)
-      .then(() => { if (!silent) showStatus('guardado'); })
-      .catch(() => showStatus('error'));
-  }
-
-  // ── Guardar una tarea individual ──────────────────────────
-  function saveTask(t) {
-    showStatus('guardando');
-    update(ref(db, 'tasks/t' + t.id), t)
-      .then(() => showStatus('guardado'))
-      .catch(() => showStatus('error'));
-  }
-
-  function deleteTask(id) {
-    showStatus('guardando');
-    remove(ref(db, 'tasks/t' + id))
-      .then(() => showStatus('guardado'))
-      .catch(() => showStatus('error'));
-  }
-
-  function showStatus(state) {
-    const el = document.getElementById('save-status');
-    if (!el) return;
-    const states = {
-      guardando:   { icon:'fa-spinner fa-spin', text:'Guardando…',          color:'#EF9F27' },
-      guardado:    { icon:'fa-cloud-arrow-up',  text:'Guardado en la nube', color:'#1D9E75' },
-      sincronizado:{ icon:'fa-rotate',          text:'En tiempo real',      color:'#378ADD' },
-      error:       { icon:'fa-triangle-exclamation', text:'Error al guardar', color:'#E24B4A' },
-    };
-    const s = states[state] || states.sincronizado;
-    el.innerHTML = `<i class="fa-solid ${s.icon}" style="color:${s.color}"></i> <span style="color:${s.color}">${s.text}</span>`;
-  }
-
-  // ── Acciones ──────────────────────────────────────────────
-  window.toggleDone = id => {
-    const t = tasks.find(x => x.id === id);
-    if (t) { t.done = !t.done; saveTask(t); render(); updateStats(); }
-  };
-  window.setPrio = (id, v) => {
-    const t = tasks.find(x => x.id === id);
-    if (t) { t.prio = v; saveTask(t); render(); updateStats(); }
-  };
-  window.setDate = (id, f, v) => {
-    const t = tasks.find(x => x.id === id);
-    if (t) { t[f] = v; saveTask(t); updateStats(); }
-  };
-  window.delTask = id => {
-    if (!confirm('¿Eliminar esta actividad?')) return;
-    tasks = tasks.filter(x => x.id !== id);
-    deleteTask(id);
-    render(); updateStats();
-  };
-  window.addTask = (wi, text, pi) => {
-    if (!text.trim()) return;
-    const w = WK[wi];
-    const t = { id: nextId++, text: text.trim(), proj: +pi, week: wi, prio: 'media', start: w.ws, end: w.we, done: false };
-    tasks.push(t);
-    saveTask(t);
-    render(); updateStats();
-  };
-  window.toggleWeek = wi => {
-    if (openWeeks.has(wi)) openWeeks.delete(wi); else openWeeks.add(wi);
-    const body = document.getElementById('wb-' + wi);
-    const chev = document.getElementById('wc-' + wi);
-    if (body) body.classList.toggle('open', openWeeks.has(wi));
-    if (chev) chev.classList.toggle('open', openWeeks.has(wi));
-  };
-  window.saveAllManual = () => saveAll(false);
-
-  // ── Constantes de UI ──────────────────────────────────────
-  const PM = [
-    {name:"Distribución",        dot:"#1D9E75", bg:"#E1F5EE", tx:"#0F6E56"},
-    {name:"Fonias",              dot:"#7F77DD", bg:"#EEEDFE", tx:"#3C3489"},
-    {name:"Comportamental",      dot:"#BA7517", bg:"#FAEEDA", tx:"#633806"},
-    {name:"Tableros Power BI",   dot:"#378ADD", bg:"#E6F1FB", tx:"#0C447C"},
-    {name:"Datos / Hildebrando", dot:"#639922", bg:"#EAF3DE", tx:"#27500A"},
-    {name:"Post / Zonal",        dot:"#D85A30", bg:"#FAECE7", tx:"#712B13"},
-    {name:"Gestión",             dot:"#888780", bg:"#F1EFE8", tx:"#444441"},
-  ];
-  window.WK = [
-    {label:"Semana 1", dates:"12–16 mayo 2026",  focus:"Quick wins y gestión inicial",  ws:"2026-05-12", we:"2026-05-16"},
-    {label:"Semana 2", dates:"19–23 mayo 2026",  focus:"Módulo Fonias",                 ws:"2026-05-19", we:"2026-05-23"},
-    {label:"Semana 3", dates:"26–30 mayo 2026",  focus:"Comportamental y tableros",     ws:"2026-05-26", we:"2026-05-30"},
-    {label:"Semana 4", dates:"2–6 junio 2026",   focus:"Indicadores e histórico",       ws:"2026-06-02", we:"2026-06-06"},
-    {label:"Semana 5", dates:"9–13 junio 2026",  focus:"Cierre y herramientas post",    ws:"2026-06-09", we:"2026-06-13"},
-  ];
-
-  function pcls(v)  { return v==='alta'?'p-alta':v==='media'?'p-media':'p-baja'; }
-  function projBadge(pi) {
-    const p = PM[pi];
-    return `<span class="proj-badge" style="background:${p.bg};color:${p.tx};border-color:${p.tx}55">
-      <span class="pd" style="background:${p.dot}"></span>${p.name}
-    </span>`;
-  }
-
-  window.updateStats = function() {
-    const d = tasks.filter(t=>t.done).length;
-    const a = tasks.filter(t=>t.prio==='alta'&&!t.done).length;
-    const n = tasks.length;
-    document.getElementById('k-total').textContent = n;
-    document.getElementById('k-done').textContent  = d;
-    document.getElementById('k-alta').textContent  = a;
-    document.getElementById('k-pct').textContent   = n ? Math.round(d/n*100)+'%' : '0%';
-    document.getElementById('prog-fill').style.width = n ? (d/n*100)+'%' : '0%';
-    document.getElementById('prog-txt').textContent  = `${d} de ${n} actividades completadas`;
-  };
-
-  window.render = function() {
-    const root = document.getElementById('weeks-root');
-    root.innerHTML = '';
-    WK.forEach((wk, wi) => {
-      const wt = tasks.filter(t=>t.week===wi);
-      const dn = wt.filter(t=>t.done).length;
-      const isOpen  = openWeeks.has(wi);
-      const allDone = wt.length > 0 && dn === wt.length;
-      const card = document.createElement('div');
-      card.className = 'week-card';
-      card.innerHTML = `
-        <div class="week-head" onclick="toggleWeek(${wi})">
-          <div class="wh-left">
-            <div class="wk-num">${wi+1}</div>
-            <div>
-              <div class="wk-focus">${wk.focus}</div>
-              <div class="wk-dates"><i class="fa-regular fa-calendar"></i> ${wk.label} · ${wk.dates}</div>
-            </div>
-          </div>
-          <div class="wh-right">
-            <span class="wpill ${allDone?'all-done':''}">${dn}/${wt.length} completadas</span>
-            <i class="fa-solid fa-chevron-down wchev ${isOpen?'open':''}" id="wc-${wi}"></i>
-          </div>
-        </div>
-        <div class="week-body ${isOpen?'open':''}" id="wb-${wi}">
-          ${wt.length===0
-            ? '<div class="empty-row"><i class="fa-regular fa-inbox"></i> Sin actividades esta semana</div>'
-            : `<div class="tbl-hdr">
-                <span></span>
-                <span>Actividad y proyecto</span>
-                <span class="tc">Prioridad</span>
-                <span class="tc">Inicio</span>
-                <span class="tc">Fin</span>
-                <span></span>
-               </div>
-               ${wt.map(t=>`
-               <div class="trow ${t.done?'done-row':''}">
-                 <div class="tc">
-                   <div class="chkbox ${t.done?'on':''}" onclick="toggleDone(${t.id})">
-                     <i class="fa-solid fa-check"></i>
-                   </div>
-                 </div>
-                 <div>
-                   <div class="tname ${t.done?'striked':''}">${t.text}</div>
-                   ${projBadge(t.proj)}
-                 </div>
-                 <div class="tc">
-                   <select class="psel ${pcls(t.prio)}" onchange="setPrio(${t.id},this.value)">
-                     <option value="alta"  ${t.prio==='alta' ?'selected':''}>🔴 Alta</option>
-                     <option value="media" ${t.prio==='media'?'selected':''}>🟡 Media</option>
-                     <option value="baja"  ${t.prio==='baja' ?'selected':''}>🟢 Baja</option>
-                   </select>
-                 </div>
-                 <div class="tc"><input type="date" class="din" value="${t.start}" onchange="setDate(${t.id},'start',this.value)"></div>
-                 <div class="tc"><input type="date" class="din" value="${t.end}"   onchange="setDate(${t.id},'end',  this.value)"></div>
-                 <div class="tc">
-                   <button class="delbtn" onclick="delTask(${t.id})" title="Eliminar">
-                     <i class="fa-solid fa-trash-can"></i>
-                   </button>
-                 </div>
-               </div>`).join('')}`
-          }
-          <div class="add-row">
-            <i class="fa-solid fa-plus" style="font-size:12px;color:var(--t3)"></i>
-            <input class="add-in" id="ai-${wi}" placeholder="Nueva actividad..."
-              onkeydown="if(event.key==='Enter'){addTask(${wi},this.value,document.getElementById('ap-${wi}').value);this.value=''}">
-            <select class="add-ps" id="ap-${wi}">
-              ${PM.map((p,i)=>`<option value="${i}">${p.name}</option>`).join('')}
-            </select>
-            <button class="add-btn"
-              onclick="addTask(${wi},document.getElementById('ai-${wi}').value,document.getElementById('ap-${wi}').value);document.getElementById('ai-${wi}').value=''">
-              <i class="fa-solid fa-plus"></i> Agregar
-            </button>
-          </div>
-        </div>`;
-      root.appendChild(card);
-    });
-  };
-
-  // Construir leyenda
-  window.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('legend').innerHTML =
-      PM.map(p=>`<span class="leg"><span class="ldot" style="background:${p.dot}"></span>${p.name}</span>`).join('');
-  });
-</script>
-
-<style>
-  :root {
-    --bg:   #F5F4F0; --card: #FFFFFF; --sec: #F8F7F4; --head: #EFEDE8;
-    --b1:   #E0DDD6; --b2:   #D0CEC7; --b3:   #C0BEB7;
-    --t1:   #1A1916; --t2:   #6B6860; --t3:   #9E9C96;
-    --acc:  #1D9E75; --acc2: #5DCAA5; --acc3: #E1F5EE;
-    --r-md: 10px; --r-lg: 14px; --r-xl: 18px;
-    --ff:   'DM Sans', system-ui, sans-serif;
-    --fm:   'DM Mono', monospace;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #131210; --card: #1C1B19; --sec: #232220; --head: #282724;
-      --b1: #2E2D2A; --b2: #3A3835; --b3: #484643;
-      --t1: #F0EDE6; --t2: #A09D96; --t3: #6B6860;
-      --acc3: #04342C;
-    }
-  }
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: var(--ff); background: var(--bg); color: var(--t1); min-height: 100vh; }
-
-  /* ── TOPBAR ── */
-  .topbar {
-    position: sticky; top: 0; z-index: 20;
-    background: var(--card); border-bottom: 1px solid var(--b1);
-    padding: 1rem 1.75rem;
-    display: flex; align-items: center; justify-content: space-between;
-    gap: 1rem;
-    box-shadow: 0 1px 4px rgba(0,0,0,.06);
-  }
-  .topbar-left h1 { font-size: 17px; font-weight: 600; letter-spacing: -.3px; }
-  .topbar-left p  { font-family: var(--fm); font-size: 11px; color: var(--t3); margin-top: 2px; }
-  .topbar-right   { display: flex; align-items: center; gap: 10px; }
-  #save-status    { font-family: var(--fm); font-size: 12px; display: flex; align-items: center; gap: 5px; }
-  .save-btn {
-    background: var(--acc); color: #fff; border: none;
-    padding: 8px 18px; border-radius: var(--r-md); font-size: 13px; font-weight: 500;
-    cursor: pointer; display: flex; align-items: center; gap: 7px;
-    transition: opacity .15s;
-  }
-  .save-btn:hover { opacity: .88; }
-
-  /* ── CONTENT ── */
-  .content { max-width: 980px; margin: 0 auto; padding: 1.5rem 1.75rem 3rem; }
-
-  /* ── KPI STRIP ── */
-  .kpi-strip { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 1rem; }
-  .kpi {
-    background: var(--card); border: 1px solid var(--b1); border-radius: var(--r-lg);
-    padding: 13px 15px; display: flex; align-items: center; gap: 11px;
-  }
-  .ki { width: 38px; height: 38px; border-radius: var(--r-md); display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
-  .ki.tl { background: #E1F5EE; color: #0F6E56; } .ki.gn { background: #EAF3DE; color: #3B6D11; }
-  .ki.rd { background: #FCEBEB; color: #A32D2D; } .ki.bl { background: #E6F1FB; color: #185FA5; }
-  @media (prefers-color-scheme: dark) {
-    .ki.tl { background: #04342C; color: #5DCAA5; } .ki.gn { background: #173404; color: #97C459; }
-    .ki.rd { background: #501313; color: #F09595; } .ki.bl { background: #042C53; color: #85B7EB; }
-  }
-  .kn { font-size: 22px; font-weight: 700; line-height: 1; }
-  .kl { font-family: var(--fm); font-size: 10px; color: var(--t3); margin-top: 2px; text-transform: uppercase; letter-spacing: .04em; }
-
-  /* ── PROGRESS ── */
-  .prog-card {
-    background: var(--card); border: 1px solid var(--b1); border-radius: var(--r-lg);
-    padding: 13px 17px; margin-bottom: 1rem;
-  }
-  .prog-meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--t2); margin-bottom: 9px; }
-  .prog-pct  { font-family: var(--fm); font-weight: 600; color: var(--acc); }
-  .prog-trk  { height: 7px; background: var(--b1); border-radius: 4px; overflow: hidden; }
-  .prog-fill { height: 100%; background: linear-gradient(90deg, var(--acc), var(--acc2)); border-radius: 4px; transition: width .5s ease; }
-
-  /* ── LEGEND ── */
-  #legend { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 1.25rem; }
-  .leg { display: flex; align-items: center; gap: 5px; background: var(--card); border: 1px solid var(--b1); border-radius: 20px; padding: 3px 10px; font-size: 11px; color: var(--t2); }
-  .ldot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-
-  /* ── WEEK CARD ── */
-  .week-card {
-    background: var(--card); border: 1px solid var(--b1); border-radius: var(--r-xl);
-    overflow: hidden; margin-bottom: 13px;
-    box-shadow: 0 1px 3px rgba(0,0,0,.05);
-  }
-  .week-head {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 20px; background: var(--head);
-    border-bottom: 1px solid var(--b1); cursor: pointer; user-select: none;
-    transition: background .12s;
-  }
-  .week-head:hover { background: var(--sec); }
-  .wh-left  { display: flex; align-items: center; gap: 13px; }
-  .wk-num   { width: 38px; height: 38px; border-radius: var(--r-md); background: var(--card); border: 1px solid var(--b1); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: var(--acc); flex-shrink: 0; }
-  .wk-focus { font-size: 14px; font-weight: 600; }
-  .wk-dates { font-family: var(--fm); font-size: 10px; color: var(--t3); margin-top: 3px; text-transform: uppercase; letter-spacing: .05em; }
-  .wk-dates i { font-size: 11px; margin-right: 3px; }
-  .wh-right { display: flex; align-items: center; gap: 11px; }
-  .wpill    { font-family: var(--fm); font-size: 11px; padding: 3px 10px; border-radius: 20px; border: 1px solid var(--b1); color: var(--t3); background: var(--card); }
-  .wpill.all-done { background: #EAF3DE; color: #27500A; border-color: #97C459; }
-  @media (prefers-color-scheme: dark) { .wpill.all-done { background: #173404; color: #C0DD97; border-color: #3B6D11; } }
-  .wchev { font-size: 13px; color: var(--t3); transition: transform .2s; }
-  .wchev.open { transform: rotate(180deg); }
-
-  /* ── WEEK BODY ── */
-  .week-body { display: none; }
-  .week-body.open { display: block; }
-
-  /* ── TABLE ── */
-  .tbl-hdr {
-    display: grid; grid-template-columns: 44px 1fr 114px 106px 106px 44px;
-    gap: 8px; padding: 7px 20px; background: var(--sec); border-bottom: 1px solid var(--b1);
-  }
-  .tbl-hdr span { font-family: var(--fm); font-size: 10px; font-weight: 500; color: var(--t3); text-transform: uppercase; letter-spacing: .05em; display: flex; align-items: center; }
-  .trow {
-    display: grid; grid-template-columns: 44px 1fr 114px 106px 106px 44px;
-    gap: 8px; padding: 10px 20px; border-bottom: 1px solid var(--b1);
-    align-items: center; transition: background .1s;
-  }
-  .trow:last-of-type { border-bottom: none; }
-  .trow:hover { background: var(--sec); }
-  .trow.done-row { opacity: .5; }
-  .tc { display: flex; align-items: center; justify-content: center; }
-  .tname { font-size: 13px; line-height: 1.4; }
-  .striked { text-decoration: line-through; }
-  .proj-badge { display: inline-flex; align-items: center; gap: 5px; margin-top: 4px; padding: 2px 8px; border-radius: 20px; font-size: 10px; border: 1px solid transparent; }
-  .pd { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-
-  /* checkbox */
-  .chkbox { width: 23px; height: 23px; border-radius: 7px; border: 1.5px solid var(--b2); cursor: pointer; display: flex; align-items: center; justify-content: center; background: var(--card); transition: all .15s; }
-  .chkbox i { font-size: 11px; color: #fff; display: none; }
-  .chkbox.on { background: var(--acc); border-color: var(--acc); }
-  .chkbox.on i { display: block; }
-
-  /* priority */
-  .psel { width: 100%; padding: 5px 6px; border-radius: var(--r-md); font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid; appearance: none; outline: none; text-align: center; }
-  .p-alta  { background: #FCEBEB; color: #A32D2D; border-color: #F09595; }
-  .p-media { background: #FAEEDA; color: #7A4610; border-color: #EF9F27; }
-  .p-baja  { background: #EAF3DE; color: #27500A; border-color: #97C459; }
-  @media (prefers-color-scheme: dark) {
-    .p-alta  { background: #501313; color: #F7C1C1; border-color: #A32D2D; }
-    .p-media { background: #412402; color: #FAC775; border-color: #854F0B; }
-    .p-baja  { background: #173404; color: #C0DD97; border-color: #3B6D11; }
-  }
-
-  /* date */
-  .din { width: 100%; padding: 5px 6px; border: 1px solid var(--b1); border-radius: var(--r-md); font-family: var(--fm); font-size: 11px; background: var(--card); color: var(--t1); cursor: pointer; outline: none; }
-  .din:hover { border-color: var(--b2); }
-  .din:focus { border-color: var(--acc); }
-
-  /* delete */
-  .delbtn { width: 28px; height: 28px; border: 1px solid var(--b1); border-radius: var(--r-md); background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--t3); transition: all .15s; }
-  .delbtn:hover { border-color: #F09595; color: #A32D2D; background: #FCEBEB; }
-
-  /* add row */
-  .add-row { display: flex; gap: 8px; align-items: center; padding: 11px 20px; background: var(--sec); border-top: 1px dashed var(--b1); }
-  .add-in  { flex: 1; padding: 7px 10px; border: 1px solid var(--b1); border-radius: var(--r-md); font-size: 12px; background: var(--card); color: var(--t1); outline: none; font-family: var(--ff); }
-  .add-in:focus { border-color: var(--acc); }
-  .add-ps  { padding: 7px 8px; border: 1px solid var(--b1); border-radius: var(--r-md); font-size: 11px; background: var(--card); color: var(--t1); cursor: pointer; outline: none; width: 140px; }
-  .add-btn { padding: 7px 14px; border: 1px solid var(--b1); border-radius: var(--r-md); font-size: 12px; font-weight: 500; cursor: pointer; background: var(--card); color: var(--t2); display: flex; align-items: center; gap: 5px; transition: all .15s; white-space: nowrap; }
-  .add-btn:hover { border-color: var(--acc); color: var(--t1); background: var(--acc3); }
-
-  /* empty */
-  .empty-row { padding: 24px; text-align: center; font-size: 12px; color: var(--t3); font-family: var(--fm); }
-  .empty-row i { font-size: 20px; display: block; margin-bottom: 5px; }
-
-  /* Notice banner */
-  .firebase-notice {
-    background: #FFF9E6; border: 1px solid #EF9F27; border-radius: var(--r-lg);
-    padding: 12px 16px; margin-bottom: 1rem; font-size: 12px; color: #633806;
-    display: flex; align-items: flex-start; gap: 10px; line-height: 1.6;
-  }
-  .firebase-notice i { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
-  .firebase-notice strong { font-weight: 600; display: block; margin-bottom: 2px; }
-  @media (prefers-color-scheme: dark) {
-    .firebase-notice { background: #2D1F00; border-color: #854F0B; color: #FAC775; }
-  }
-
-  @media (max-width: 640px) {
-    .topbar { padding: .875rem 1rem; }
-    .content { padding: 1rem 1rem 2rem; }
-    .kpi-strip { grid-template-columns: repeat(2,1fr); }
-    .tbl-hdr, .trow { grid-template-columns: 36px 1fr 90px 90px 90px 36px; gap: 5px; padding: 9px 14px; }
-  }
-</style>
-</head>
-<body>
-
-<!-- TOPBAR -->
-<header class="topbar">
-  <div class="topbar-left">
-    <h1>Cronograma ágil — Pendientes Oscar</h1>
-    <p>Colaborativo en tiempo real · 5 semanas · 6 proyectos</p>
-  </div>
-  <div class="topbar-right">
-    <span id="save-status">
-      <i class="fa-solid fa-circle-notch fa-spin" style="color:#9E9C96"></i>
-      <span style="color:#9E9C96;font-size:12px">Conectando…</span>
-    </span>
-    <button class="save-btn" onclick="saveAllManual()">
-      <i class="fa-solid fa-cloud-arrow-up"></i> Guardar todo
-    </button>
-  </div>
-</header>
-
-<div class="content">
-
-    </div>
-
-  <!-- KPIs -->
-  <div class="kpi-strip">
-    <div class="kpi"><div class="ki tl"><i class="fa-solid fa-list-check"></i></div><div><div class="kn" id="k-total">—</div><div class="kl">Actividades</div></div></div>
-    <div class="kpi"><div class="ki gn"><i class="fa-solid fa-circle-check"></i></div><div><div class="kn" id="k-done">—</div><div class="kl">Completadas</div></div></div>
-    <div class="kpi"><div class="ki rd"><i class="fa-solid fa-triangle-exclamation"></i></div><div><div class="kn" id="k-alta">—</div><div class="kl">Prioridad alta</div></div></div>
-    <div class="kpi"><div class="ki bl"><i class="fa-solid fa-chart-pie"></i></div><div><div class="kn" id="k-pct">—</div><div class="kl">Avance</div></div></div>
-  </div>
-
-  <!-- PROGRESS -->
-  <div class="prog-card">
-    <div class="prog-meta">
-      <span>Progreso general</span>
-      <span class="prog-pct" id="prog-txt">Cargando…</span>
-    </div>
-    <div class="prog-trk"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
-  </div>
-
-  <!-- LEGEND -->
-  <div id="legend"></div>
-
-  <!-- WEEKS -->
-  <div id="weeks-root">
-    <div style="text-align:center;padding:3rem;color:#9E9C96;font-size:13px">
-      <i class="fa-solid fa-circle-notch fa-spin" style="font-size:22px;display:block;margin-bottom:8px"></i>
-      Cargando datos desde Firebase…
-    </div>
-  </div>
-
+// initBin se conserva como stub para compatibilidad
+async function initBin(){ }
+ 
+// ── Indicador de estado ──
+function setStatus(type,msg){
+const el=document.getElementById('last-update');
+if(!el)return;
+const colors={cloud:'var(--c-green)',warn:'var(--c-amber)',saving:'var(--c-accent)',local:'var(--c-text3)'};
+const icons={cloud:'ti-cloud-check',warn:'ti-cloud-off',saving:'ti-loader-2 spin',local:'ti-device-floppy'};
+el.innerHTML=`<i class="ti ${icons[type]||'ti-cloud'}" style="margin-right:4px"></i>${msg}`;
+el.style.color=colors[type]||'var(--c-text3)';
+}
+ 
+// ── Banner de sincronización ──
+function showSyncBanner(state){
+const banner=document.getElementById('sync-banner');
+if(!banner)return;
+const cfg={
+connecting:{bg:'rgba(79,142,247,.12)',border:'rgba(79,142,247,.3)',color:'var(--c-accent)',icon:'ti-loader-2 spin',txt:'Conectando con la nube…'},
+connected: {bg:'rgba(62,207,160,.08)',border:'rgba(62,207,160,.2)',color:'var(--c-green)',icon:'ti-cloud-check',txt:'🟢 Sincronización activa — todos los que abran este archivo ven los mismos datos en tiempo real'},
+error: {bg:'rgba(247,104,104,.08)',border:'rgba(247,104,104,.2)',color:'var(--c-red)',icon:'ti-cloud-off',txt:'⚠️ Sin conexión a la nube — los cambios se guardan solo en este navegador'},
+};
+const c=cfg[state]||cfg.error;
+banner.style.cssText=`display:flex;align-items:center;gap:10px;padding:9px 20px;background:${c.bg};border-bottom:1px solid ${c.border};font-size:11px;color:${c.color}`;
+banner.innerHTML=`<i class="ti ${c.icon}" style="font-size:14px;flex-shrink:0"></i><span>${c.txt}</span>`;
+}
+ 
+// ── Inicio ──
+async function initSync(){
+showSyncBanner('connecting');
+localLoad();
+render();
+setTimeout(openFirstWeek,30);
+ 
+await initBin();
+ 
+// Carga inicial desde la nube (datos más recientes)
+const changed=await cloudLoad();
+if(changed){ render(); }
+ 
+showSyncBanner('connected');
+startPolling();
+}
+ 
+function getActs(){return TAB==='maye'?ACTS_MAYE:ACTS_SEBA;}
+function sk(aId,i){return aId+'_'+i;}
+function isDone(aId,i){return !!ST.checkedSubs[sk(aId,i)];}
+function actProg(act){
+const t=act.subs.length,d=act.subs.filter((_,i)=>isDone(act.id,i)).length;
+return{total:t,done:d,pct:t?Math.round(d/t*100):0};
+}
+function getPrio(aId,def){return ST.actPrio[aId]||def;}
+function getStatus(aId){return ST.actStatus[aId]||'pendiente';}
+function wIdx(wId){return WEEKS.findIndex(w=>w.id===wId);}
+function fw(){return PERIOD==='all'?WEEKS:WEEKS.filter(w=>w.month===PERIOD);}
+ 
+/* ════════════════════════════════════════════
+RENDER
+════════════════════════════════════════════ */
+function render(){
+renderKPIs();
+renderProgBars();
+renderLegend();
+renderWkFilters();
+if(VIEW==='list') renderList();
+else renderGantt();
+}
+ 
+function renderKPIs(){
+const acts=getActs();
+let tot=0,done=0,alta=0;
+acts.forEach(a=>{
+tot+=a.subs.length;
+a.subs.forEach((_,i)=>{if(isDone(a.id,i))done++;});
+if(getPrio(a.id,a.prio)==='alta')alta++;
+});
+const pct=tot?Math.round(done/tot*100):0;
+document.getElementById('k-total').textContent=tot;
+document.getElementById('k-done').textContent=done;
+document.getElementById('k-pend').textContent=tot-done;
+document.getElementById('k-alta').textContent=alta;
+document.getElementById('k-pct').textContent=pct+'%';
+document.getElementById('prog-pct-global').textContent=pct+'%';
+}
+ 
+function renderProgBars(){
+const acts=getActs();
+document.getElementById('prog-bars').innerHTML=acts.map(a=>{
+const p=actProg(a);
+const proj=PROJECTS.find(pr=>pr.id===a.proj);
+const col=proj?proj.color:'#4F8EF7';
+const nameT=a.name.length>60?a.name.substring(0,60)+'…':a.name;
+return `<div class="prog-row">
+<div class="prog-name">
+<span style="width:8px;height:8px;border-radius:50%;background:${col};flex-shrink:0;display:inline-block;margin-top:2px"></span>
+<span class="prog-name-txt" title="${a.name}" style="color:${col}">${nameT}</span>
 </div>
-
+<div class="prog-bar-wrap"><div class="prog-bar-fill" style="width:${p.pct}%;background:${col}"></div></div>
+<div class="prog-num">${p.done}/${p.total}&nbsp;·&nbsp;${p.pct}%</div>
+</div>`;
+}).join('');
+}
+ 
+function renderLegend(){
+const ids=[...new Set(getActs().map(a=>a.proj))];
+document.getElementById('legend-strip').innerHTML=ids.map(id=>{
+const p=PROJECTS.find(pr=>pr.id===id);
+if(!p)return '';
+return `<div class="legend-item"><span style="width:7px;height:7px;border-radius:50%;background:${p.color};flex-shrink:0;display:inline-block"></span>${p.name}</div>`;
+}).join('');
+}
+ 
+function renderWkFilters(){
+const acts=getActs(),weeks=fw();
+const used=new Set();
+acts.forEach(a=>{const si=wIdx(a.week),ei=wIdx(a.endWeek);WEEKS.slice(si,ei+1).forEach(w=>used.add(w.id));});
+let h=`<button class="wf-btn${W_FILTER==='all'?' active':''}" onclick="filterWeek('all',this)">Todas</button>`;
+weeks.filter(w=>used.has(w.id)).forEach(w=>{
+h+=`<button class="wf-btn${W_FILTER===w.id?' active':''}" onclick="filterWeek('${w.id}',this)">${w.lbl} · ${w.dates}</button>`;
+});
+document.getElementById('week-filter-wrap').innerHTML=h;
+}
+ 
+function renderList(){
+const acts=getActs(),weeks=fw();
+const root=document.getElementById('weeks-root');
+const groups=[];
+weeks.forEach(w=>{
+const wi=wIdx(w.id);
+const wa=acts.filter(a=>{const si=wIdx(a.week),ei=wIdx(a.endWeek);return wi>=si&&wi<=ei;});
+if(wa.length)groups.push({week:w,acts:wa});
+});
+const vis=W_FILTER==='all'?groups:groups.filter(g=>g.week.id===W_FILTER);
+if(!vis.length){
+root.innerHTML='<div style="padding:40px;text-align:center;font-size:12px;color:var(--c-text3)"><i class="ti ti-calendar-off" style="font-size:28px;display:block;margin-bottom:8px"></i>No hay actividades en este período</div>';
+return;
+}
+root.innerHTML=vis.map(({week:w,acts:wa})=>{
+let tot=0,done=0;
+wa.forEach(a=>{tot+=a.subs.length;a.subs.forEach((_,i)=>{if(isDone(a.id,i))done++;});});
+const pct=tot?Math.round(done/tot*100):0;
+return `
+<div class="week-section" id="ws_${w.id}">
+<div class="week-header" onclick="toggleWeek('${w.id}')">
+<div class="week-badge">${w.lbl}</div>
+<div class="week-info">
+<div class="week-title">${w.full}</div>
+<div class="week-focus">${w.focus}</div>
+</div>
+<div class="week-meta">
+<div class="week-mini-bar"><div class="week-mini-fill" id="wmf_${w.id}" style="width:${pct}%"></div></div>
+<div class="week-stat${pct===100?' complete':''}" id="wst_${w.id}">${done}/${tot} · ${pct}%</div>
+<i class="ti ti-chevron-down week-chev" id="wchev_${w.id}"></i>
+</div>
+</div>
+<div class="week-body" id="wb_${w.id}">
+<div class="col-header">
+<span></span><span>Actividad / Subactividad</span>
+<span>Prioridad</span><span>Inicio</span><span>Fin</span><span>Estado</span>
+</div>
+${wa.map(a=>renderActGroup(a,w.id)).join('')}
+<div class="add-act-strip">
+<button class="add-act-btn" onclick="addActModal()">
+<i class="ti ti-plus"></i> Agregar nueva actividad a esta pestaña
+</button>
+</div>
+${renderObs(w.id,w.full)}
+</div>
+</div>`;
+}).join('');
+}
+ 
+function renderActGroup(act,weekId){
+const proj=PROJECTS.find(p=>p.id===act.proj);
+const col=proj?proj.color:'#4F8EF7';
+const p=actProg(act);
+const prio=getPrio(act.id,act.prio);
+const status=getStatus(act.id);
+const ws=WEEKS.find(w=>w.id===act.week);
+const we=WEEKS.find(w=>w.id===act.endWeek);
+const gId='ag_'+act.id+'_'+weekId;
+ 
+const subsHtml=act.subs.map((sub,i)=>{
+const done=isDone(act.id,i);
+const disp=(!SHOW_DONE&&done)?'style="display:none"':'';
+return `<div class="task-row is-sub${done?' is-done':''}" id="sub_${act.id}_${i}" ${disp}>
+<div class="chk sub-chk${done?' on':''}" onclick="toggleSub('${act.id}',${i})"><i class="ti ti-check"></i></div>
+<div><div class="task-name">${sub}</div></div>
+<div></div><div></div><div></div>
+<div style="display:flex;align-items:center;gap:6px">
+<div class="status-sel ${done?'st-completado':'st-pendiente'}" style="font-size:10px;padding:3px 6px;border-radius:6px;border:1px solid;text-align:center;flex:1">${done?'Hecho':'Pendiente'}</div>
+<button class="del-sub-btn" onclick="delSubModal('${act.id}',${i})" title="Eliminar subactividad"><i class="ti ti-x"></i></button>
+</div>
+</div>`;
+}).join('');
+ 
+return `<div class="act-group" id="actg_${act.id}">
+<div class="act-group-header" onclick="toggleActGroup('${gId}')">
+<span class="act-group-dot" style="background:${col}"></span>
+<div class="act-group-title">${act.name}</div>
+<span class="act-group-badge" style="background:${col}22;border:1px solid ${col}55;color:${col}">${proj?proj.name:''}</span>
+<span class="act-group-progress" id="agp_${act.id}">${p.done}/${p.total} · ${p.pct}%</span>
+<button class="del-act-btn" onclick="event.stopPropagation();delActModal('${act.id}')" title="Eliminar actividad"><i class="ti ti-trash"></i> Eliminar</button>
+<i class="ti ti-chevron-down act-group-chev open" id="achev_${gId}"></i>
+</div>
+<div class="act-group-body" id="${gId}">
+<div class="task-row">
+<div class="chk${p.pct===100?' on':''}" style="pointer-events:none;opacity:.5"><i class="ti ti-check"></i></div>
+<div>
+<div class="task-name" style="font-weight:600;color:${col}">${act.name}</div>
+<div class="task-sub-lbl" id="agl_${act.id}">${p.done}/${p.total} subactividades · ${p.pct}% completado</div>
+</div>
+<div><select class="prio-sel prio-${prio}" onchange="changePrio('${act.id}',this)">
+<option value="alta"${prio==='alta'?' selected':''}>Alta</option>
+<option value="media"${prio==='media'?' selected':''}>Media</option>
+<option value="baja"${prio==='baja'?' selected':''}>Baja</option>
+</select></div>
+<div><input type="date" class="date-inp" value="${ws?ws.start:''}"></div>
+<div><input type="date" class="date-inp" value="${we?we.end:''}"></div>
+<div><select class="status-sel st-${status}" onchange="changeStatus('${act.id}',this)">
+<option value="pendiente"${status==='pendiente'?' selected':''}>Pendiente</option>
+<option value="en-proceso"${status==='en-proceso'?' selected':''}>En proceso</option>
+<option value="completado"${status==='completado'?' selected':''}>Completado</option>
+<option value="bloqueado"${status==='bloqueado'?' selected':''}>Bloqueado</option>
+</select></div>
+</div>
+${subsHtml}
+<button class="add-sub-btn" onclick="addSubModal('${act.id}')">
+<i class="ti ti-plus"></i> Agregar subactividad
+</button>
+</div>
+</div>`;
+}
+ 
+function renderObs(weekId,fullLabel){
+if(TAB==='maye') return `<div class="obs-section">
+<div class="obs-section-title"><i class="ti ti-notes"></i> Observaciones — ${fullLabel}</div>
+<div class="obs-grid-3">
+${obsBox(weekId,'maye','Maye','maye')}${obsBox(weekId,'luisa','Luisa','luisa')}${obsBox(weekId,'supervision','Supervisión','sup')}
+</div></div>`;
+return `<div class="obs-section">
+<div class="obs-section-title"><i class="ti ti-notes"></i> Observaciones — ${fullLabel}</div>
+<div class="obs-grid-2">
+${obsBox(weekId,'seba','Sebastián','seba')}${obsBox(weekId,'supervision','Supervisión','sup')}
+</div></div>`;
+}
+function obsBox(wId,key,label,cls){
+const val=ST.obsData[wId+'_'+key]||'';
+return `<div class="obs-box ${cls}">
+<div class="obs-box-header"><i class="ti ti-user"></i> ${label}</div>
+<textarea class="obs-ta" placeholder="Observaciones de ${label}..." oninput="saveObs('${wId}','${key}',this.value)">${val}</textarea>
+</div>`;
+}
+ 
+function renderGantt(){
+const acts=getActs(),weeks=fw();
+const gc=document.getElementById('gantt-content');
+if(!weeks.length){gc.innerHTML='<div style="padding:30px;text-align:center;font-size:12px;color:var(--c-text3)">Sin semanas para este período</div>';return;}
+ 
+const pLabel=TAB==='maye'?'Maye/Luisa':'Sebastián';
+const pCol=TAB==='maye'?'var(--maye-col)':'var(--seba-col)';
+ 
+// Month colspan groups
+const mGroups=[];
+weeks.forEach(w=>{
+const last=mGroups[mGroups.length-1];
+if(!last||last.m!==w.month) mGroups.push({m:w.month,n:1});
+else last.n++;
+});
+ 
+let html=`<table class="gtable" style="min-width:${420+weeks.length*50}px">
+<thead>
+<tr>
+<th rowspan="2" style="min-width:250px;position:sticky;left:0;z-index:2;background:var(--c-bg)">Actividad</th>
+<th rowspan="2" style="min-width:90px">Persona</th>
+<th rowspan="2" style="min-width:60px;text-align:center">Avance</th>
+<th rowspan="2" style="min-width:65px;text-align:center">Prioridad</th>
+${mGroups.map(mg=>`<th class="month-h" colspan="${mg.n}">${mg.m}</th>`).join('')}
+</tr>
+<tr>${weeks.map(w=>`<th class="wk-h">${w.lbl}<br><span style="font-weight:400">${w.dates}</span></th>`).join('')}</tr>
+</thead><tbody>`;
+ 
+acts.forEach(a=>{
+const proj=PROJECTS.find(p=>p.id===a.proj);
+const col=proj?proj.color:'#4F8EF7';
+const p=actProg(a);
+const prio=getPrio(a.id,a.prio);
+const prioTxt=prio==='alta'?'🔴 Alta':prio==='media'?'🟡 Media':'🟢 Baja';
+const prioCl=prio==='alta'?'#F79898':prio==='media'?'#F5C063':'#3ECFA0';
+const si=wIdx(a.week),ei=wIdx(a.endWeek);
+ 
+html+=`<tr>
+<td style="position:sticky;left:0;z-index:1;background:var(--c-bg2)">
+<div class="g-act-name">
+<span style="width:9px;height:9px;border-radius:50%;background:${col};flex-shrink:0;display:inline-block"></span>
+<span title="${a.name}">${a.name.length>44?a.name.substring(0,44)+'…':a.name}</span>
+</div>
+</td>
+<td><span class="g-pill" style="background:${pCol}22;color:${pCol};border:1px solid ${pCol}44">${pLabel}</span></td>
+<td style="text-align:center">
+<div style="font-family:'DM Mono',monospace;font-size:11px;font-weight:600;color:${col}">${p.pct}%</div>
+<div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--c-text3)">${p.done}/${p.total}</div>
+</td>
+<td style="text-align:center;font-size:10px;color:${prioCl};white-space:nowrap">${prioTxt}</td>`;
+ 
+weeks.forEach(w=>{
+const gwi=wIdx(w.id);
+if(gwi>=si&&gwi<=ei){
+const isS=gwi===si,isE=gwi===ei;
+const rl=isS?'4px':'0',rr=isE?'4px':'0';
+const bl=isS?`border-left:2px solid ${col};`:'';
+const br=isE?`border-right:2px solid ${col};`:'';
+html+=`<td class="g-bar-td">
+<div class="g-bar" style="background:${col}28;border-radius:${rl} ${rr} ${rr} ${rl};border-top:2px solid ${col};border-bottom:2px solid ${col};${bl}${br}">
+<div class="g-bar-prog" style="width:${isE?p.pct:100}%;background:${col}55;border-radius:${rl} ${isE?rr:'0'} ${isE?rr:'0'} ${rl}"></div>
+</div>
+</td>`;
+} else {
+html+=`<td></td>`;
+}
+});
+html+='</tr>';
+});
+ 
+html+='</tbody></table>';
+gc.innerHTML=html;
+}
+ 
+/* ════════════════════════════════════════════
+INTERACTIONS
+════════════════════════════════════════════ */
+ 
+// KEY FIX: Marking a sub does NOT re-render the list — only updates affected DOM nodes
+function toggleSub(actId,subIdx){
+const key=sk(actId,subIdx);
+ST.checkedSubs[key]=!ST.checkedSubs[key];
+const done=ST.checkedSubs[key];
+save();
+ 
+// Update the sub row in place
+const row=document.getElementById('sub_'+actId+'_'+subIdx);
+if(row){
+row.classList.toggle('is-done',done);
+const chk=row.querySelector('.chk');
+const nm=row.querySelector('.task-name');
+const stEl=row.querySelector('.status-sel');
+if(chk){chk.classList.toggle('on',done);}
+if(nm){nm.style.textDecoration=done?'line-through':'';}
+if(stEl){stEl.textContent=done?'Hecho':'Pendiente';stEl.className='status-sel '+(done?'st-completado':'st-pendiente');}
+if(!SHOW_DONE&&done) row.style.display='none';
+}
+ 
+// Update activity group header progress + sub-label
+const act=getActs().find(a=>a.id===actId);
+if(act){
+const p=actProg(act);
+const pgEl=document.getElementById('agp_'+actId);
+const lbEl=document.getElementById('agl_'+actId);
+if(pgEl) pgEl.textContent=p.done+'/'+p.total+' · '+p.pct+'%';
+if(lbEl) lbEl.textContent=p.done+'/'+p.total+' subactividades · '+p.pct+'% completado';
+// Update the act-row summary chk
+const actGrp=document.getElementById('actg_'+actId);
+if(actGrp){
+const headerChk=actGrp.querySelector('.task-row > .chk');
+if(headerChk) headerChk.classList.toggle('on',p.pct===100);
+}
+}
+ 
+renderKPIs();
+renderProgBars();
+updateWeekStats();
+}
+ 
+function updateWeekStats(){
+const acts=getActs();
+WEEKS.forEach(w=>{
+const wi=wIdx(w.id);
+const wa=acts.filter(a=>{const si=wIdx(a.week),ei=wIdx(a.endWeek);return wi>=si&&wi<=ei;});
+if(!wa.length)return;
+let tot=0,done=0;
+wa.forEach(a=>{tot+=a.subs.length;a.subs.forEach((_,i)=>{if(isDone(a.id,i))done++;});});
+const pct=tot?Math.round(done/tot*100):0;
+const mf=document.getElementById('wmf_'+w.id);
+const st=document.getElementById('wst_'+w.id);
+if(mf) mf.style.width=pct+'%';
+if(st){st.textContent=done+'/'+tot+' · '+pct+'%';st.classList.toggle('complete',pct===100);}
+});
+}
+ 
+function changePrio(actId,sel){
+ST.actPrio[actId]=sel.value;
+sel.className='prio-sel prio-'+sel.value;
+save();renderKPIs();renderProgBars();
+}
+function changeStatus(actId,sel){
+ST.actStatus[actId]=sel.value;
+sel.className='status-sel st-'+sel.value;
+save();
+}
+function saveObs(wId,key,val){ST.obsData[wId+'_'+key]=val;save();}
+ 
+function toggleWeek(wId){
+const body=document.getElementById('wb_'+wId);
+const chev=document.getElementById('wchev_'+wId);
+if(!body)return;
+body.classList.toggle('open');
+if(chev)chev.classList.toggle('open');
+}
+function toggleActGroup(gId){
+const body=document.getElementById(gId);
+const chev=document.getElementById('achev_'+gId);
+if(!body)return;
+body.classList.toggle('collapsed');
+if(chev)chev.classList.toggle('open',!body.classList.contains('collapsed'));
+}
+ 
+function filterWeek(wId,btn){
+W_FILTER=wId;
+document.querySelectorAll('.wf-btn').forEach(b=>b.classList.remove('active'));
+if(btn)btn.classList.add('active');
+render();
+}
+function toggleShowDone(){
+SHOW_DONE=!SHOW_DONE;
+document.getElementById('show-done-sw').classList.toggle('on',SHOW_DONE);
+document.querySelectorAll('.task-row.is-sub.is-done').forEach(el=>{el.style.display=SHOW_DONE?'':'none';});
+}
+function switchTab(tab){
+TAB=tab;W_FILTER='all';
+document.getElementById('tab-maye').classList.toggle('active',tab==='maye');
+document.getElementById('tab-seba').classList.toggle('active',tab==='seba');
+render();
+}
+ 
+// KEY FIX: view switching — explicitly show/hide both views and re-render
+function setView(v){
+VIEW=v;
+document.getElementById('vt-list').classList.toggle('active',v==='list');
+document.getElementById('vt-gantt').classList.toggle('active',v==='gantt');
+const lv=document.getElementById('list-view');
+const gv=document.getElementById('gantt-view');
+if(v==='list'){
+lv.style.display='';
+gv.style.display='none';
+renderList();
+} else {
+lv.style.display='none';
+gv.style.display='';
+renderGantt();
+}
+}
+ 
+function applyPeriodFilter(){
+PERIOD=document.getElementById('period-filter').value;
+W_FILTER='all';render();
+}
+ 
+function openFirstWeek(){
+const acts=getActs();if(!acts.length)return;
+const wId=acts[0].week;
+const b=document.getElementById('wb_'+wId);
+const c=document.getElementById('wchev_'+wId);
+if(b){b.classList.add('open');}
+if(c){c.classList.add('open');}
+}
+ 
+document.addEventListener('DOMContentLoaded',()=>{
+initSync();
+});
+ 
+/* ════════════════════════════════════════════
+MODAL SYSTEM
+════════════════════════════════════════════ */
+let _modalCb=null;
+ 
+function openModal(html, onConfirm, isDanger=false){
+document.getElementById('modal-body').innerHTML=html;
+document.getElementById('modal-overlay').classList.add('open');
+const okBtn=document.getElementById('modal-ok-btn');
+okBtn.className='modal-ok '+(isDanger?'danger':'primary');
+okBtn.textContent=isDanger?'Eliminar':'Confirmar';
+_modalCb=onConfirm;
+}
+function closeModal(){
+document.getElementById('modal-overlay').classList.remove('open');
+_modalCb=null;
+}
+function confirmModal(){
+if(_modalCb) _modalCb();
+closeModal();
+}
+// Close on overlay click
+document.addEventListener('click',e=>{
+if(e.target.id==='modal-overlay') closeModal();
+});
+ 
+/* ── ADD SUBACTIVITY ── */
+function addSubModal(actId){
+openModal(`
+<div class="modal-title"><i class="ti ti-plus" style="color:var(--c-accent)"></i> Agregar subactividad</div>
+<div class="modal-sub">Se añadirá al final de la actividad seleccionada.</div>
+<div class="modal-field">
+<label class="modal-label">Descripción de la subactividad</label>
+<textarea class="modal-ta" id="m-sub-txt" placeholder="Escribe la subactividad aquí..." autofocus></textarea>
+</div>`,
+()=>{
+const txt=(document.getElementById('m-sub-txt').value||'').trim();
+if(!txt) return;
+const acts=getActs();
+const act=acts.find(a=>a.id===actId);
+if(!act) return;
+act.subs.push(txt);
+save();
+render();
+}
+);
+setTimeout(()=>{const el=document.getElementById('m-sub-txt');if(el)el.focus();},150);
+}
+ 
+/* ── DELETE SUBACTIVITY ── */
+function delSubModal(actId, subIdx){
+const acts=getActs();
+const act=acts.find(a=>a.id===actId);
+const subName=act?act.subs[subIdx]:'';
+openModal(`
+<div class="modal-title"><i class="ti ti-trash" style="color:var(--c-red)"></i> Eliminar subactividad</div>
+<div class="modal-sub">¿Seguro que quieres eliminar esta subactividad? Esta acción no se puede deshacer.</div>
+<div style="background:var(--c-bg3);border:1px solid var(--c-border);border-radius:var(--r);padding:10px 12px;font-size:12px;color:var(--c-text2);line-height:1.5">"${subName}"</div>`,
+()=>{
+const acts=getActs();
+const act=acts.find(a=>a.id===actId);
+if(!act) return;
+// Clean checked state for removed and shift higher ones
+const newChecked={};
+Object.keys(ST.checkedSubs).forEach(k=>{
+const [aid,si]=k.split('_');
+if(aid!==actId){ newChecked[k]=ST.checkedSubs[k]; return; }
+const i=parseInt(si);
+if(i===subIdx) return; // drop it
+if(i>subIdx) newChecked[actId+'_'+(i-1)]=ST.checkedSubs[k];
+else newChecked[k]=ST.checkedSubs[k];
+});
+ST.checkedSubs=newChecked;
+act.subs.splice(subIdx,1);
+save();
+render();
+},
+true // isDanger
+);
+}
+ 
+/* ── ADD ACTIVITY ── */
+function addActModal(){
+const weekOpts=WEEKS.map(w=>`<option value="${w.id}">${w.lbl} · ${w.full}</option>`).join('');
+const prioColors={'alta':'p12','media':'p4','baja':'p7'};
+openModal(`
+<div class="modal-title"><i class="ti ti-layout-grid-add" style="color:var(--c-accent)"></i> Nueva actividad general</div>
+<div class="modal-sub">Se agregará a la pestaña de <strong>${TAB==='maye'?'Maye &amp; Luisa':'Sebastián'}</strong>.</div>
+<div class="modal-field">
+<label class="modal-label">Nombre de la actividad</label>
+<input class="modal-inp" id="m-act-name" placeholder="Ej: Ajuste indicador de eficiencia..." autofocus>
+</div>
+<div class="modal-2col">
+<div class="modal-field">
+<label class="modal-label">Prioridad</label>
+<select class="modal-sel" id="m-act-prio">
+<option value="alta">🔴 Alta</option>
+<option value="media" selected>🟡 Media</option>
+<option value="baja">🟢 Baja</option>
+</select>
+</div>
+<div class="modal-field">
+<label class="modal-label">Color / etiqueta</label>
+<input class="modal-inp" id="m-act-color" type="color" value="#4F8EF7" style="height:38px;padding:4px">
+</div>
+</div>
+<div class="modal-2col">
+<div class="modal-field">
+<label class="modal-label">Semana inicio</label>
+<select class="modal-sel" id="m-act-wstart">${weekOpts}</select>
+</div>
+<div class="modal-field">
+<label class="modal-label">Semana fin</label>
+<select class="modal-sel" id="m-act-wend">${weekOpts}</select>
+</div>
+</div>
+<div class="modal-field">
+<label class="modal-label">Subactividades (una por línea)</label>
+<textarea class="modal-ta" id="m-act-subs" style="min-height:90px" placeholder="Subactividad 1&#10;Subactividad 2&#10;Subactividad 3"></textarea>
+</div>`,
+()=>{
+const name=(document.getElementById('m-act-name').value||'').trim();
+if(!name){alert('El nombre es obligatorio.');return;}
+const prio=document.getElementById('m-act-prio').value;
+const color=document.getElementById('m-act-color').value;
+const wStart=document.getElementById('m-act-wstart').value;
+const wEnd=document.getElementById('m-act-wend').value;
+const subsRaw=(document.getElementById('m-act-subs').value||'');
+const subs=subsRaw.split('\n').map(s=>s.trim()).filter(Boolean);
+if(!subs.length) subs.push('Subactividad pendiente de detallar');
+ 
+// New unique IDs
+const ts=Date.now();
+const projId='custom_p'+ts;
+const actId='custom_a'+ts;
+const projName=name.length>18?name.substring(0,18)+'…':name;
+ 
+PROJECTS.push({id:projId,name:projName,color});
+const acts=getActs();
+acts.push({id:actId,proj:projId,week:wStart,endWeek:wEnd,prio,name,subs});
+save();
+render();
+}
+);
+setTimeout(()=>{const el=document.getElementById('m-act-name');if(el)el.focus();},150);
+}
+ 
+/* ── DELETE ACTIVITY ── */
+function delActModal(actId){
+const acts=getActs();
+const act=acts.find(a=>a.id===actId);
+if(!act) return;
+openModal(`
+<div class="modal-title"><i class="ti ti-trash" style="color:var(--c-red)"></i> Eliminar actividad</div>
+<div class="modal-sub">¿Seguro que quieres eliminar esta actividad y todas sus subactividades? Esta acción no se puede deshacer.</div>
+<div style="background:rgba(247,104,104,.08);border:1px solid rgba(247,104,104,.3);border-radius:var(--r);padding:10px 12px;font-size:12px;color:var(--c-text);line-height:1.5">
+<strong>${act.name}</strong><br>
+<span style="color:var(--c-text3)">${act.subs.length} subactividades</span>
+</div>`,
+()=>{
+const acts=getActs();
+const idx=acts.findIndex(a=>a.id===actId);
+if(idx===-1) return;
+// Remove checked state for this act
+Object.keys(ST.checkedSubs).forEach(k=>{ if(k.startsWith(actId+'_')) delete ST.checkedSubs[k]; });
+delete ST.actStatus[actId];
+delete ST.actPrio[actId];
+acts.splice(idx,1);
+save();
+render();
+},
+true // isDanger
+);
+}
+</script>
+ 
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay">
+<div class="modal">
+<div id="modal-body"></div>
+<div class="modal-actions">
+<button class="modal-cancel" onclick="closeModal()">Cancelar</button>
+<button class="modal-ok primary" id="modal-ok-btn" onclick="confirmModal()">Confirmar</button>
+</div>
+</div>
+</div>
+ 
 </body>
 </html>
