@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cronograma — Equipo Apoyo a la Supervisión DTZ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<!-- ============================================================
+  INSTRUCCIONES — LEA ANTES DE SUBIR A GITHUB / FIREBASE HOSTING
+  ============================================================
+  1. Vaya a console.firebase.google.com
+  2. Abra su proyecto → Configuración ⚙️ → Aplicaciones → su app web
+  3. Copie los valores de firebaseConfig y péguelos abajo
+     reemplazando cada "PEGAR_AQUI_..." con su valor real.
+  4. En Firebase Console → Realtime Database → Crear base de datos
+     → Modo de prueba → Crear
+  5. Guarde el archivo y súbalo a GitHub / Firebase Hosting.
+  ============================================================ -->
+
+<script type="module">
+  import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, set, onValue, update, remove }
+                             from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  // ── PEGUE AQUÍ SUS CLAVES DE FIREBASE ──────────────────────
+  const firebaseConfig = {
+apiKey: "AIzaSyD73rC4QPv_I8RtLMx1mfmT991gnTOHS7c",
+  authDomain: "cronograma-actividades-3febf.firebaseapp.com",
+  databaseURL: "https://cronograma-actividades-3febf-default-rtdb.firebaseio.com",
+  projectId: "cronograma-actividades-3febf",
+  storageBucket: "cronograma-actividades-3febf.firebasestorage.app",
+  messagingSenderId: "77108164236",
+  appId: "1:77108164236:web:3b9f9b42c0897691a96da9",
+
+  };
+  // ───────────────────────────────────────────────────────────
+
+  const app      = initializeApp(firebaseConfig);
+  const db       = getDatabase(app);
+  const ST_REF   = ref(db, 'cronograma/state');
+  const ACTS_REF = ref(db, 'cronograma/acts');
+
+  // ── Estado local ──────────────────────────────────────────
+  let checkedSubs = {};   // { "A1_0": true, ... }
+  let actStatus   = {};   // { "A1": "en-proceso", ... }
+  let actPrio     = {};   // { "A1": "alta", ... }
+  let obsData     = {};   // { "w01_maye": "texto...", ... }
+  let customActs  = [];   // actividades agregadas por el usuario
+  let needsSave   = false;
+
+  // ── TAB activo ────────────────────────────────────────────
+  let currentTab = 'maye';
+
+  // ══════════════════════════════════════════════════════════
+  //  DATOS FIJOS — PROYECTOS
+  // ══════════════════════════════════════════════════════════
+  const PROJECTS = [
+    {id:'p1',  name:'Distribución Turnos',  color:'#4F8EF7'},
+    {id:'p2',  name:'Comportamental',       color:'#F5A623'},
+    {id:'p3',  name:'Tableros Power BI',    color:'#A78BFA'},
+    {id:'p4',  name:'Fonías',              color:'#22D3EE'},
+    {id:'p5',  name:'Tablero Control',      color:'#FB923C'},
+    {id:'p6',  name:'Formato Notas',        color:'#F472B6'},
+    {id:'p7',  name:'Post Operacional',     color:'#3ECFA0'},
+    {id:'p8',  name:'Tiempos de Ciclo',     color:'#818CF8'},
+    {id:'p9',  name:'Debido Proceso',       color:'#34D399'},
+    {id:'p10', name:'T. Entre Paradas',     color:'#F87171'},
+    {id:'p11', name:'IRP Seguimiento',      color:'#FBBF24'},
+    {id:'p12', name:'Proporcionalidad',     color:'#2DD4BF'},
+    {id:'s1',  name:'Soporte Técnico',      color:'#3ECFA0'},
+    {id:'s2',  name:'Fonías Diarias',       color:'#22D3EE'},
+    {id:'s3',  name:'Formato Notas Op.',    color:'#F472B6'},
+    {id:'s4',  name:'Post Operacional',     color:'#FB923C'},
+    {id:'s5',  name:'Debido Proceso KM',    color:'#A78BFA'},
+  ];
+
+  // ── SEMANAS ───────────────────────────────────────────────
+  window.WEEKS = [
+    {id:'w01',lbl:'S01',dates:'12–16 may',  full:'12–16 mayo 2026',   month:'mayo',  start:'2026-05-12',end:'2026-05-16',focus:'Arranque: distribución de turnos'},
+    {id:'w02',lbl:'S02',dates:'18–23 may',  full:'18–23 mayo 2026',   month:'mayo',  start:'2026-05-18',end:'2026-05-23',focus:'Comportamental + Fonías'},
+    {id:'w03',lbl:'S03',dates:'26–30 may',  full:'26–30 mayo 2026',   month:'mayo',  start:'2026-05-26',end:'2026-05-30',focus:'Lógica automática + IRP'},
+    {id:'w04',lbl:'S04',dates:'2–6 jun',    full:'2–6 junio 2026',    month:'junio', start:'2026-06-02',end:'2026-06-06',focus:'Tableros Power BI – histórico'},
+    {id:'w05',lbl:'S05',dates:'9–13 jun',   full:'9–13 junio 2026',   month:'junio', start:'2026-06-09',end:'2026-06-13',focus:'Tablero control consistencia'},
+    {id:'w06',lbl:'S06',dates:'16–20 jun',  full:'16–20 junio 2026',  month:'junio', start:'2026-06-16',end:'2026-06-20',focus:'Formato notas + Power Automate'},
+    {id:'w07',lbl:'S07',dates:'23–27 jun',  full:'23–27 junio 2026',  month:'junio', start:'2026-06-23',end:'2026-06-27',focus:'Equipo post operacional'},
+    {id:'w08',lbl:'S08',dates:'30j–4jul',   full:'30 jun–4 jul 2026', month:'julio', start:'2026-06-30',end:'2026-07-04',focus:'Tiempos ciclo + cierre ajustes'},
+    {id:'w09',lbl:'S09',dates:'7–11 jul',   full:'7–11 julio 2026',   month:'julio', start:'2026-07-07',end:'2026-07-11',focus:'Debido proceso – macro y tablero'},
+    {id:'w10',lbl:'S10',dates:'14–18 jul',  full:'14–18 julio 2026',  month:'julio', start:'2026-07-14',end:'2026-07-18',focus:'Velocidades + IRP seguimiento'},
+    {id:'w11',lbl:'S11',dates:'21–25 jul',  full:'21–25 julio 2026',  month:'julio', start:'2026-07-21',end:'2026-07-25',focus:'Reportes automáticos Python/PBI'},
+    {id:'w12',lbl:'S12',dates:'28j–1ago',   full:'28 jul–1 ago 2026', month:'agosto',start:'2026-07-28',end:'2026-08-01',focus:'Consolidación y pruebas'},
+    {id:'w13',lbl:'S13',dates:'4–8 ago',    full:'4–8 agosto 2026',   month:'agosto',start:'2026-08-04',end:'2026-08-08',focus:'Socialización y ajustes finales'},
+    {id:'w14',lbl:'S14',dates:'11–15 ago',  full:'11–15 agosto 2026', month:'agosto',start:'2026-08-11',end:'2026-08-15',focus:'Documentación y entregables'},
+    {id:'w15',lbl:'S15',dates:'18–22 ago',  full:'18–22 agosto 2026', month:'agosto',start:'2026-08-18',end:'2026-08-22',focus:'Cierre y transferencia'},
+    {id:'w16',lbl:'S16',dates:'25–29 ago',  full:'25–29 agosto 2026', month:'agosto',start:'2026-08-25',end:'2026-08-29',focus:'Revisión final y presentación'},
+  ];
+
+  // ── ACTIVIDADES MAYE & LUISA ──────────────────────────────
+  const ACTS_MAYE = [
+    {id:'A8', proj:'p8', week:'w01',endWeek:'w01',prio:'alta',
+     name:'Ajustes finales y cierre tablero de tiempos de ciclo',
+     subs:['Consolidar observaciones y retroalimentaciones del equipo táctico y de programación','Ejecutar ajustes funcionales, operativos y visuales solicitados','Validar consistencia, funcionamiento y estabilidad de los ajustes implementados','Realizar pruebas finales de operación y visualización de información','Documentar cambios y mejoras aplicadas respecto a las observaciones recibidas','Generar comunicación formal de cierre de ajustes al equipo táctico y de programación']},
+    {id:'A9', proj:'p9', week:'w01',endWeek:'w10',prio:'alta',
+     name:'Validación, ajuste y socialización herramientas de seguimiento de debido proceso',
+     subs:['Revisar y validar la macro de debido proceso con ajustes solicitados por Nini','Verificar funcionamiento de la macro con metodología actual del proceso','Incorporar mejoras identificadas durante validación funcional de la herramienta','Ejecutar pruebas operativas: estabilidad, trazabilidad y consistencia de información','Socializar versión ajustada de la macro con usuarios responsables del proceso','Recopilar retroalimentación de personas encargadas de validar el tablero','Evaluar observaciones, oportunidades de mejora y requerimientos adicionales','Analizar viabilidad funcional y técnica de los ajustes propuestos por usuarios','Implementar ajustes priorizados sobre el tablero de seguimiento de debido proceso','Validar consistencia visual, operativa y metodológica del tablero ajustado','Realizar socialización general con todo el equipo de debido proceso','Documentar recomendaciones, mejoras futuras y lineamientos de uso']},
+    {id:'A2', proj:'p2', week:'w01',endWeek:'w03',prio:'alta',
+     name:'Actualizar y automatizar indicador comportamental y llegadas tarde de técnicos',
+     subs:['Diseñar y crear formulario digital para registro de llegadas tarde y novedades comportamentales','Definir campos, categorías de novedades y criterios de clasificación','Configurar almacenamiento y consolidación automática mediante Excel derivado de Microsoft Forms','Realizar depuración, transformación y estructuración de la base de datos para análisis','Evaluar y proponer herramienta para generación automática de informes individuales','Diseñar plantilla estandarizada de informes de llegadas tarde','Configurar automatización de generación de informes a partir de la base consolidada','Diseñar flujo administrativo en Power Automate para envío de informes (Óscar → Rafael)','Configurar notificaciones, estados de aprobación y trazabilidad documental en el flujo','Ejecutar pruebas funcionales del formulario, correspondencia y flujo automatizado','Realizar ajustes finales e implementación de la solución integral']},
+    {id:'A11',proj:'p11',week:'w01',endWeek:'w03',prio:'alta',
+     name:'Seguimiento y validación de ajustes implementados al indicador IRP',
+     subs:['Revisar y validar novedades y ajustes reportados por equipo post operacional y revisiones internas','Realizar seguimiento a correcciones implementadas y socializar cambios sobre el indicador IRP','Ajustar los cambios en el tablero si hay lugar a modificaciones']},
+    {id:'A7', proj:'p7', week:'w01',endWeek:'w10',prio:'alta',
+     name:'Etapa 3: Fortalecimiento equipo post operacional – reestructuración y estandarización',
+     subs:['Definir alcance, objetivos y modelo de funcionamiento del equipo post operacional','Establecer lineamientos y competencias para evaluación integral de concesionarios','Diseñar metodología estandarizada de evaluación y seguimiento de concesionarios','Desarrollar herramienta tipo "hoja de vida / ruta histórica del concesionario"','Estructurar criterios homogéneos para identificación y análisis de problemáticas','Proponer catálogo de temas y lenguaje estandarizado para el equipo post operacional','Diseñar lineamientos y formatos de análisis para uniformidad en evaluaciones','Implementar sesiones activas de trabajo colaborativo para socialización de problemáticas','Establecer espacios periódicos de retroalimentación y transferencia de conocimiento','Diseñar flujograma jurídico y administrativo para gestión y escalamiento de hallazgos','Definir rutas de actuación, responsables, tiempos y consecuencias por tipo de hallazgo','Diseñar indicadores y mecanismos de seguimiento de la nueva metodología','Realizar validación funcional de herramientas, formatos y metodologías propuestas','Socializar nueva estructura operativa con el equipo post operacional']},
+    {id:'A3', proj:'p3', week:'w01',endWeek:'w06',prio:'alta',
+     name:'Actualizar, optimizar y estandarizar tableros de seguimiento operativo y administrativo',
+     subs:['Actualizar información histórica noviembre 2025 – abril 2026 (tableros técnicos)','Validar, depurar y consolidar fuentes de información operativa (fonías y sesiones LG)','Actualizar indicador comportamental con nueva estructura de registros y novedades','Actualizar indicador de puntualidad con ingresos y sesiones FMS LG','Actualizar indicador de cumplimiento: ausencias, permisos, incapacidades y novedades','Ajustar cálculo y visualización del indicador de fonías – nueva metodología','Levantar requerimientos funcionales y metodológicos del indicador IRP','Realizar cruce de técnicos, horarios y rutas asignadas para IRP','Diseñar lógica de cálculo, validación y visualización del indicador IRP','Evaluar resultados operativos obtenidos por técnico y ruta','Socializar metodología, alcance e interpretación del indicador IRP con el equipo','Incorporar IRP como nuevo componente de seguimiento operacional en los tableros','Actualizar información histórica personal misional administrativo Nov25–Abr26','Rediseñar formato de reporte PDF mensual con enfoque gerencial y ejecutivo','Configurar generación periódica de reportes mensuales automatizados','Diseñar formato de reporte semanal (fonías e IRP)','Ajustar visualizaciones y segmentaciones para seguimiento individual de desempeño','Validar funcionamiento y consistencia de reportes automatizados','Desarrollar código Python para generación automática de informes en Power BI']},
+    {id:'A1', proj:'p1', week:'w02',endWeek:'w03',prio:'alta',
+     name:'Distribución automática de turnos y controles operativos ante novedades de asistencia',
+     subs:['Levantar y documentar las reglas operativas y criterios de redistribución de turnos','Definir criterios de priorización para minimizar afectaciones sobre programación inicial','Diseñar interfaz de validación de asistencia mediante checklist de técnicos programados','Configurar opciones para registrar ausencias, ingresos tardíos y novedades operativas','Desarrollar lógica automática de reasignación de controles y actividades operativas','Parametrizar restricciones operativas, balance de carga y disponibilidad de técnicos','Implementar actualización dinámica de la programación en tiempo real ante cambios','Ejecutar pruebas funcionales con diferentes escenarios operativos y de contingencia','Ajustar y optimizar con base en resultados de pruebas y retroalimentación de usuarios','Implementación final y socialización de la herramienta con personal operativo']},
+    {id:'A4', proj:'p4', week:'w01',endWeek:'w03',prio:'media',
+     name:'Ajustar y optimizar tablero de fonías con nueva metodología de cálculo diario',
+     subs:['Diseñar nueva visualización orientada al seguimiento diario del indicador de fonías','Implementar cálculo basado en promedio para análisis diario del indicador','Mantener el cálculo actual como metodología oficial para mediciones semanales y mensuales','Parametrizar el tablero para diferenciar metodología según periodicidad de análisis','Analizar tablero de Masivo Capital e incluir elementos visuales relevantes']},
+    {id:'A12',proj:'p12',week:'w02',endWeek:'w03',prio:'media',
+     name:'Ajustes propuesta de proporcionalidad: mapa en carrete y distribuciones automáticas y manuales',
+     subs:['Generar ajustes a la propuesta de proporcionalidad relacionadas con mapa en carrete','Generar distribuciones automáticas a partir de los criterios de proporcionalidad definidos','Implementar distribuciones manuales en paralelo con las distribuciones automáticas','Validar consistencia y coherencia entre distribuciones automáticas y manuales generadas','Ajustar visualización del mapa en carrete conforme a los resultados de distribución obtenidos']},
+    {id:'A6', proj:'p6', week:'w04',endWeek:'w06',prio:'media',
+     name:'Adaptar e integrar formato de notas de Valeria al entorno operativo zonal',
+     subs:['Revisar y analizar estructura, alcance y funcionalidad del trabajo de Valeria','Identificar requerimientos operativos del entorno zonal y del Centro de Control','Ajustar estructura, campos y lógica del formato de notas para la operación zonal','Incorporar validaciones y controles de calidad y consistencia de información','Parametrizar el formato para uso operativo de enlaces y personal del Centro de Control','Realizar pruebas funcionales y validaciones con escenarios operativos reales','Ajustar formato con base en observaciones y retroalimentación de usuarios operativos','Dejar configurada y lista la versión final del formato para implementación']},
+    {id:'A10',proj:'p10',week:'w07',endWeek:'w07',prio:'media',
+     name:'Ajustar tablero tiempo entre paradas con cálculo de velocidades operativas (v = d/t)',
+     subs:['Revisar y validar la estructura actual del tablero y las fuentes de información','Implementar cálculo de velocidad operacional a partir de tiempo y distancia (v = d/t)','Ajustar visualizaciones e indicadores para análisis operativo','Validar consistencia de resultados y funcionamiento del tablero ajustado','Socializar cambios y metodología implementada con el equipo operativo']},
+    {id:'A5', proj:'p5', week:'w05',endWeek:'w07',prio:'baja',
+     name:'Diseñar e implementar tablero de control para consistencia de información operativa',
+     subs:['Levantar requerimientos funcionales y definir alcance del tablero de control','Identificar y consolidar fuentes: eliminación de viajes, notas, vehículos inmovilizados, tickets SIRCI','Crear código en Python para transcribir fonías a texto y generar comparativos de reportes','Realizar procesos de depuración, homologación y validación de calidad de datos','Desarrollar lógica de comparación y validación de consistencia entre novedades y soportes','Diseñar indicadores de control: eliminaciones de notas, inmovilizaciones y tickets SIRCI','Implementar alertas e identificadores de inconsistencias, duplicidades o posibles omisiones','Diseñar visualizaciones gerenciales y operativas para trazabilidad de novedades','Validar consistencia y funcionamiento del tablero con casos reales e históricos','Ajustar tablero con base en resultados de validación y retroalimentación operativa','Implementar versión final y socializar herramienta de control con usuarios responsables','Realizar análisis de efectividad de eliminaciones de técnicos por zona']},
+  ];
+
+  // ── ACTIVIDADES SEBASTIÁN ─────────────────────────────────
+  const ACTS_SEBA = [
+    {id:'S1',proj:'s1',week:'w01',endWeek:'w16',prio:'alta',
+     name:'Soporte técnico y operativo transversal a todos los procesos del equipo zonal',
+     subs:['Brindar apoyo técnico en requerimientos transversales solicitados por el equipo','Apoyar implementación, seguimiento y socialización de herramientas y tableros','Documentar soporte brindado y registrar incidencias técnicas resueltas','Proponer mejoras técnicas en herramientas y procesos del equipo zonal']},
+    {id:'S2',proj:'s2',week:'w01',endWeek:'w16',prio:'alta',
+     name:'Generación, seguimiento y reporte diario de informe de fonías',
+     subs:['Generar informe de fonías diario mediante el tablero ajustado','Validar consistencia y actualización de la información reportada en tablero de fonías','Reportar resultados diarios al responsable del proceso de fonías','Identificar anomalías o inconsistencias en datos reportados y escalarlas','Mantener registro histórico de indicadores diarios de fonías']},
+    {id:'S3',proj:'s3',week:'w02',endWeek:'w07',prio:'alta',
+     name:'Socialización, capacitación y seguimiento al nuevo formato de notas operativas',
+     subs:['Socializar y capacitar al personal operativo sobre el nuevo formato de notas','Realizar seguimiento a la implementación y uso adecuado del formato de notas','Documentar estructura, funcionamiento y lineamientos de uso del formato','Identificar dificultades operativas en el uso del formato y reportar al equipo','Apoyar ajustes al formato con base en retroalimentación operativa']},
+    {id:'S4',proj:'s4',week:'w04',endWeek:'w11',prio:'media',
+     name:'Apoyo a sesiones activas de trabajo colaborativo del equipo post operacional',
+     subs:['Apoyar el desarrollo de sesiones activas de trabajo colaborativo del equipo post operacional','Participar en análisis de problemáticas operativas entre zonas y concesionarios','Apoyar identificación y replicabilidad de buenas prácticas y oportunidades de mejora','Documentar conclusiones y compromisos derivados de sesiones colaborativas','Dar seguimiento a compromisos adquiridos en sesiones de trabajo colaborativo']},
+    {id:'S5',proj:'s5',week:'w05',endWeek:'w13',prio:'media',
+     name:'Seguimiento, análisis y propuesta de mejoras para casos de kilometraje en debido proceso',
+     subs:['Realizar seguimiento a casos recurrentes de kilometraje en el proceso de debido proceso','Analizar causas raíz de los casos de kilometraje identificados','Proponer mejoras para minimizar casos recurrentes asociados a kilometraje','Consolidar hallazgos y recomendaciones en documento de análisis','Socializar hallazgos y propuestas con el equipo responsable']},
+  ];
+
+  // ══════════════════════════════════════════════════════════
+  //  FIREBASE — ESCUCHAR CAMBIOS EN TIEMPO REAL
+  // ══════════════════════════════════════════════════════════
+  onValue(ST_REF, snapshot => {
+    const data = snapshot.val();
+    if (data) {
+      checkedSubs = data.checkedSubs || {};
+      actStatus   = data.actStatus   || {};
+      actPrio     = data.actPrio     || {};
+      obsData     = data.obsData     || {};
+      customActs  = data.customActs  || [];
+    }
+    render();
+    updateStats();
+    showStatus('sincronizado');
+    // Ocultar aviso Firebase si ya está configurado
+    const notice = document.getElementById('fb-notice');
+    if (notice) notice.style.display = 'none';
+  }, err => {
+    showStatus('error');
+    render();
+    updateStats();
+  });
+
+  // ══════════════════════════════════════════════════════════
+  //  GUARDAR EN FIREBASE
+  // ══════════════════════════════════════════════════════════
+  function buildState() {
+    return { checkedSubs, actStatus, actPrio, obsData, customActs, _ts: Date.now() };
+  }
+
+  function saveAll(silent = false) {
+    if (!silent) showStatus('guardando');
+    needsSave = false;
+    set(ST_REF, buildState())
+      .then(()  => { if (!silent) showStatus('guardado'); })
+      .catch(()  => showStatus('error'));
+  }
+
+  function savePartial(path, value) {
+    showStatus('guardando');
+    needsSave = false;
+    update(ref(db, 'cronograma/state/' + path), value)
+      .then(()  => showStatus('guardado'))
+      .catch(()  => showStatus('error'));
+  }
+
+  function showStatus(state) {
+    const el = document.getElementById('save-status');
+    if (!el) return;
+    const states = {
+      guardando:    { icon:'fa-spinner fa-spin',        text:'Guardando…',           color:'#EF9F27' },
+      guardado:     { icon:'fa-cloud-arrow-up',         text:'Guardado en la nube',  color:'#1D9E75' },
+      sincronizado: { icon:'fa-rotate',                 text:'En tiempo real',       color:'#378ADD' },
+      error:        { icon:'fa-triangle-exclamation',   text:'Error — revisa config',color:'#E24B4A' },
+    };
+    const s = states[state] || states.sincronizado;
+    el.innerHTML = <i class="fa-solid ${s.icon}" style="color:${s.color}"></i> <span style="color:${s.color}">${s.text}</span>;
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  HELPERS
+  // ══════════════════════════════════════════════════════════
+  function getActs() {
+    const base = currentTab === 'maye' ? [...ACTS_MAYE] : [...ACTS_SEBA];
+    const extra = customActs.filter(a => a.tab === currentTab);
+    return [...base, ...extra];
+  }
+  function wIdx(wId) { return WEEKS.findIndex(w => w.id === wId); }
+  function isDone(aId, i) { return !!checkedSubs[aId + '_' + i]; }
+  function actProg(act) {
+    const t = act.subs.length;
+    const d = act.subs.filter((_, i) => isDone(act.id, i)).length;
+    return { total: t, done: d, pct: t ? Math.round(d / t * 100) : 0 };
+  }
+  function getPrio(aId, def) { return actPrio[aId] || def; }
+  function getStatusA(aId) { return actStatus[aId] || 'pendiente'; }
+  function pcls(v) { return v==='alta'?'p-alta':v==='media'?'p-media':'p-baja'; }
+  function projBadge(projId) {
+    const p = PROJECTS.find(pr => pr.id === projId);
+    if (!p) return '';
+    return `<span class="proj-badge" style="background:${p.color}22;color:${p.color};border-color:${p.color}55">
+      <span class="pd" style="background:${p.color}"></span>${p.name}
+    </span>`;
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  ACCIONES — expuestas al HTML
+  // ══════════════════════════════════════════════════════════
+  window.saveAllManual = () => saveAll(false);
+
+  window.switchTab = tab => {
+    currentTab = tab;
+    document.getElementById('tab-maye').classList.toggle('active', tab === 'maye');
+    document.getElementById('tab-seba').classList.toggle('active', tab === 'seba');
+    render(); updateStats();
+  };
+
+  window.toggleSub = (actId, subIdx) => {
+    const key = actId + '_' + subIdx;
+    checkedSubs[key] = !checkedSubs[key];
+    // Actualizar DOM en lugar de re-render completo
+    const row = document.getElementById('sub_' + actId + '_' + subIdx);
+    if (row) {
+      const done = checkedSubs[key];
+      row.classList.toggle('done-row', done);
+      const chk = row.querySelector('.chkbox');
+      const nm  = row.querySelector('.tname');
+      const st  = row.querySelector('.sub-status');
+      if (chk) chk.classList.toggle('on', done);
+      if (nm)  nm.style.textDecoration = done ? 'line-through' : '';
+      if (st)  { st.textContent = done ? 'Hecho' : 'Pendiente'; st.className = 'sub-status ' + (done ? 'st-done' : 'st-pend'); }
+    }
+    // Actualizar progreso de la actividad
+    const act = getActs().find(a => a.id === actId);
+    if (act) {
+      const p = actProg(act);
+      const pgEl = document.getElementById('agp_' + actId);
+      const lbEl = document.getElementById('agl_' + actId);
+      if (pgEl) pgEl.textContent = p.done + '/' + p.total + ' · ' + p.pct + '%';
+      if (lbEl) lbEl.textContent = p.done + '/' + p.total + ' subactividades · ' + p.pct + '% completado';
+    }
+    updateStats();
+    needsSave = true;
+    saveAll(true);
+  };
+
+  window.setPrioA = (actId, val, sel) => {
+    actPrio[actId] = val;
+    if (sel) sel.className = 'psel ' + pcls(val);
+    updateStats();
+    saveAll(true);
+  };
+
+  window.setStatusA = (actId, val, sel) => {
+    actStatus[actId] = val;
+    if (sel) sel.className = 'stsel st-' + val;
+    saveAll(true);
+  };
+
+  window.saveObs = (wId, person, val) => {
+    obsData[wId + '_' + person] = val;
+    needsSave = true;
+  };
+
+  window.saveObsNow = () => {
+    if (needsSave) saveAll(true);
+  };
+
+  window.addCustomAct = (tab, name, projColor, projName, weekStart, weekEnd, prio, subsText) => {
+    const ts = Date.now();
+    const projId = 'cp_' + ts;
+    const actId  = 'ca_' + ts;
+    const subs   = subsText.split('\n').map(s => s.trim()).filter(Boolean);
+    if (!subs.length) subs.push('Subactividad pendiente de detallar');
+    PROJECTS.push({ id: projId, name: projName.length > 18 ? projName.substring(0,18)+'…' : projName, color: projColor });
+    customActs.push({ id: actId, proj: projId, week: weekStart, endWeek: weekEnd, prio, name, subs, tab });
+    saveAll(false);
+    render(); updateStats();
+  };
+
+  window.delAct = actId => {
+    if (!confirm('¿Eliminar esta actividad y todas sus subactividades?')) return;
+    const idx = customActs.findIndex(a => a.id === actId);
+    if (idx !== -1) {
+      customActs.splice(idx, 1);
+      Object.keys(checkedSubs).forEach(k => { if (k.startsWith(actId + '_')) delete checkedSubs[k]; });
+      delete actStatus[actId]; delete actPrio[actId];
+      saveAll(false); render(); updateStats();
+    } else {
+      alert('Solo puedes eliminar actividades que hayas agregado manualmente.');
+    }
+  };
+
+  window.addSubToAct = (actId, text) => {
+    if (!text.trim()) return;
+    // Buscar en customActs primero
+    const ca = customActs.find(a => a.id === actId);
+    if (ca) {
+      ca.subs.push(text.trim());
+      saveAll(false); render(); updateStats();
+    } else {
+      // Buscar en actividades base
+      const base = [...ACTS_MAYE, ...ACTS_SEBA].find(a => a.id === actId);
+      if (base) {
+        base.subs.push(text.trim());
+        render(); updateStats();
+        // Guardar estado (los checks se sincronizan; la subactividad nueva solo es local en esta sesión)
+        showStatus('guardado');
+      }
+    }
+  };
+
+  window.delSub = (actId, subIdx) => {
+    if (!confirm('¿Eliminar esta subactividad?')) return;
+    const act = [...ACTS_MAYE, ...ACTS_SEBA, ...customActs].find(a => a.id === actId);
+    if (!act) return;
+    const newChecked = {};
+    Object.keys(checkedSubs).forEach(k => {
+      const [aid, si] = k.split('_');
+      if (aid !== actId) { newChecked[k] = checkedSubs[k]; return; }
+      const i = parseInt(si);
+      if (i === subIdx) return;
+      if (i > subIdx) newChecked[actId + '_' + (i-1)] = checkedSubs[k];
+      else newChecked[k] = checkedSubs[k];
+    });
+    checkedSubs = newChecked;
+    act.subs.splice(subIdx, 1);
+    saveAll(false); render(); updateStats();
+  };
+
+  window.toggleWeekUI = wId => {
+    const body = document.getElementById('wb_' + wId);
+    const chev = document.getElementById('wc_' + wId);
+    if (body) body.classList.toggle('open');
+    if (chev) chev.classList.toggle('open');
+  };
+
+  // ══════════════════════════════════════════════════════════
+  //  STATS
+  // ══════════════════════════════════════════════════════════
+  window.updateStats = function () {
+    const acts = getActs();
+    let tot = 0, done = 0, alta = 0;
+    acts.forEach(a => {
+      tot  += a.subs.length;
+      done += a.subs.filter((_, i) => isDone(a.id, i)).length;
+      if (getPrio(a.id, a.prio) === 'alta') alta++;
+    });
+    const pct = tot ? Math.round(done / tot * 100) : 0;
+    document.getElementById('k-total').textContent = tot;
+    document.getElementById('k-done').textContent  = done;
+    document.getElementById('k-pend').textContent  = tot - done;
+    document.getElementById('k-alta').textContent  = alta;
+    document.getElementById('k-pct').textContent   = pct + '%';
+    document.getElementById('prog-fill').style.width = pct + '%';
+    document.getElementById('prog-txt').textContent  = ${done} de ${tot} subactividades completadas;
+    // Barras por actividad
+    const pbars = document.getElementById('prog-bars');
+    if (pbars) {
+      pbars.innerHTML = acts.map(a => {
+        const p   = actProg(a);
+        const prj = PROJECTS.find(pr => pr.id === a.proj);
+        const col = prj ? prj.color : '#4F8EF7';
+        const nm  = a.name.length > 55 ? a.name.substring(0,55) + '…' : a.name;
+        return `<div class="pb-row">
+          <div class="pb-name" title="${a.name}">
+            <span class="pb-dot" style="background:${col}"></span>
+            <span style="color:${col}">${nm}</span>
+          </div>
+          <div class="pb-track"><div class="pb-fill" style="width:${p.pct}%;background:${col}"></div></div>
+          <div class="pb-num">${p.done}/${p.total} · ${p.pct}%</div>
+        </div>`;
+      }).join('');
+    }
+  };
+
+  // ══════════════════════════════════════════════════════════
+  //  RENDER
+  // ══════════════════════════════════════════════════════════
+  window.render = function () {
+    renderLegend();
+    renderList();
+  };
+
+  function renderLegend() {
+    const ids  = [...new Set(getActs().map(a => a.proj))];
+    const lgEl = document.getElementById('legend');
+    if (!lgEl) return;
+    lgEl.innerHTML = ids.map(id => {
+      const p = PROJECTS.find(pr => pr.id === id);
+      if (!p) return '';
+      return <span class="leg"><span class="ldot" style="background:${p.color}"></span>${p.name}</span>;
+    }).join('');
+  }
+
+  function renderList() {
+    const acts = getActs();
+    const root = document.getElementById('weeks-root');
+    if (!root) return;
+
+    // Agrupar actividades por semanas que abarcan
+    const weekGroups = [];
+    WEEKS.forEach(w => {
+      const wi   = wIdx(w.id);
+      const wActs = acts.filter(a => {
+        const si = wIdx(a.week), ei = wIdx(a.endWeek);
+        return wi >= si && wi <= ei;
+      });
+      if (wActs.length) weekGroups.push({ week: w, acts: wActs });
+    });
+
+    root.innerHTML = weekGroups.map(({ week: w, acts: wa }) => {
+      let tot = 0, done = 0;
+      wa.forEach(a => {
+        tot  += a.subs.length;
+        done += a.subs.filter((_, i) => isDone(a.id, i)).length;
+      });
+      const pct     = tot ? Math.round(done / tot * 100) : 0;
+      const allDone = pct === 100 && tot > 0;
+
+      return `
+      <div class="week-card" id="ws_${w.id}">
+        <div class="week-head" onclick="toggleWeekUI('${w.id}')">
+          <div class="wh-left">
+            <div class="wk-num">${w.lbl}</div>
+            <div>
+              <div class="wk-focus">${w.focus}</div>
+              <div class="wk-dates"><i class="fa-regular fa-calendar"></i> ${w.full}</div>
+            </div>
+          </div>
+          <div class="wh-right">
+            <div class="week-mini-bar"><div class="week-mini-fill" style="width:${pct}%"></div></div>
+            <span class="wpill ${allDone ? 'all-done' : ''}">${done}/${tot} · ${pct}%</span>
+            <i class="fa-solid fa-chevron-down wchev" id="wc_${w.id}"></i>
+          </div>
+        </div>
+        <div class="week-body" id="wb_${w.id}">
+          <div class="tbl-hdr">
+            <span></span>
+            <span>Actividad / Subactividad</span>
+            <span class="tc">Prioridad</span>
+            <span class="tc">Estado</span>
+            <span class="tc">Inicio</span>
+            <span class="tc">Fin</span>
+            <span></span>
+          </div>
+          ${wa.map(a => renderActGroup(a)).join('')}
+          ${renderObs(w.id, w.full)}
+          <div class="add-row">
+            <i class="fa-solid fa-plus" style="font-size:11px;color:var(--t3)"></i>
+            <input class="add-in" id="ai_${w.id}" placeholder="Nueva actividad para esta semana…"
+              onkeydown="if(event.key==='Enter') submitNewAct('${w.id}')">
+            <select class="add-ps" id="ap_${w.id}">
+              ${PROJECTS.filter(p=>p.id.startsWith(currentTab==='maye'?'p':'s')).map(p=><option value="${p.id}">${p.name}</option>).join('')}
+            </select>
+            <button class="add-btn" onclick="submitNewAct('${w.id}')">
+              <i class="fa-solid fa-plus"></i> Agregar
+            </button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderActGroup(act) {
+    const proj   = PROJECTS.find(p => p.id === act.proj);
+    const col    = proj ? proj.color : '#4F8EF7';
+    const p      = actProg(act);
+    const prio   = getPrio(act.id, act.prio);
+    const status = getStatusA(act.id);
+    const ws     = WEEKS.find(w => w.id === act.week);
+    const we     = WEEKS.find(w => w.id === act.endWeek);
+    const isCustom = customActs.some(a => a.id === act.id);
+
+    const subsHtml = act.subs.map((sub, i) => {
+      const done = isDone(act.id, i);
+      return `<div class="trow is-sub ${done ? 'done-row' : ''}" id="sub_${act.id}_${i}">
+        <div class="tc">
+          <div class="chkbox ${done ? 'on' : ''}" onclick="toggleSub('${act.id}',${i})">
+            <i class="fa-solid fa-check"></i>
+          </div>
+        </div>
+        <div><div class="tname ${done ? 'striked' : ''}">${sub}</div></div>
+        <div></div>
+        <div class="tc">
+          <span class="sub-status ${done ? 'st-done' : 'st-pend'}">${done ? 'Hecho' : 'Pendiente'}</span>
+        </div>
+        <div></div><div></div>
+        <div class="tc">
+          <button class="delbtn" onclick="delSub('${act.id}',${i})" title="Eliminar subactividad">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>`;
+    }).join('');
+
+    return `
+    <div class="act-group" id="actg_${act.id}">
+      <div class="act-group-head" onclick="toggleActGroupUI('ag_${act.id}')">
+        <span class="ag-dot" style="background:${col}"></span>
+        <div class="ag-title">${act.name}</div>
+        ${projBadge(act.proj)}
+        <span class="ag-prog" id="agp_${act.id}">${p.done}/${p.total} · ${p.pct}%</span>
+        ${isCustom ? <button class="delbtn" onclick="event.stopPropagation();delAct('${act.id}')" title="Eliminar actividad" style="margin-left:4px"><i class="fa-solid fa-trash-can"></i></button> : ''}
+        <i class="fa-solid fa-chevron-down wchev open" id="agc_${act.id}"></i>
+      </div>
+      <div class="act-group-body" id="ag_${act.id}">
+        <div class="trow act-summary-row">
+          <div class="tc">
+            <div class="chkbox ${p.pct===100?'on':''}" style="pointer-events:none;opacity:.5">
+              <i class="fa-solid fa-check"></i>
+            </div>
+          </div>
+          <div>
+            <div class="tname" style="font-weight:600;color:${col}">${act.name}</div>
+            <div class="sub-lbl" id="agl_${act.id}">${p.done}/${p.total} subactividades · ${p.pct}% completado</div>
+          </div>
+          <div class="tc">
+            <select class="psel ${pcls(prio)}" onchange="setPrioA('${act.id}',this.value,this)">
+              <option value="alta"  ${prio==='alta' ?'selected':''}>🔴 Alta</option>
+              <option value="media" ${prio==='media'?'selected':''}>🟡 Media</option>
+              <option value="baja"  ${prio==='baja' ?'selected':''}>🟢 Baja</option>
+            </select>
+          </div>
+          <div class="tc">
+            <select class="stsel st-${status}" onchange="setStatusA('${act.id}',this.value,this)">
+              <option value="pendiente"  ${status==='pendiente'  ?'selected':''}>⏳ Pendiente</option>
+              <option value="en-proceso" ${status==='en-proceso' ?'selected':''}>🔄 En proceso</option>
+              <option value="completado" ${status==='completado' ?'selected':''}>✅ Completado</option>
+              <option value="bloqueado"  ${status==='bloqueado'  ?'selected':''}>🚫 Bloqueado</option>
+            </select>
+          </div>
+          <div class="tc"><input type="date" class="din" value="${ws ? ws.start : ''}"></div>
+          <div class="tc"><input type="date" class="din" value="${we ? we.end   : ''}"></div>
+          <div></div>
+        </div>
+        ${subsHtml}
+        <div class="add-sub-row">
+          <i class="fa-solid fa-plus" style="font-size:10px;color:var(--t3)"></i>
+          <input class="add-in" id="asi_${act.id}" placeholder="Nueva subactividad…"
+            onkeydown="if(event.key==='Enter'){addSubToAct('${act.id}',this.value);this.value=''}">
+          <button class="add-btn" onclick="addSubToAct('${act.id}',document.getElementById('asi_${act.id}').value);document.getElementById('asi_${act.id}').value=''">
+            <i class="fa-solid fa-plus"></i> Agregar
+          </button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function renderObs(weekId, fullLabel) {
+    const people = currentTab === 'maye'
+      ? [{key:'maye',label:'Maye'},{key:'luisa',label:'Luisa'},{key:'supervision',label:'Supervisión'}]
+      : [{key:'seba',label:'Sebastián'},{key:'supervision',label:'Supervisión'}];
+    const grid = currentTab === 'maye' ? 'obs-grid-3' : 'obs-grid-2';
+    return `<div class="obs-section">
+      <div class="obs-section-title"><i class="fa-solid fa-notes-medical"></i> Observaciones — ${fullLabel}</div>
+      <div class="${grid}">
+        ${people.map(p => {
+          const cls = p.key === 'supervision' ? 'sup' : p.key;
+          const val = (obsData[weekId + '_' + p.key] || '').replace(/</g,'&lt;');
+          return `<div class="obs-box ${cls}">
+            <div class="obs-box-head"><i class="fa-solid fa-user"></i> ${p.label}</div>
+            <textarea class="obs-ta" placeholder="Observaciones de ${p.label}..."
+              oninput="saveObs('${weekId}','${p.key}',this.value)"
+              onblur="saveObsNow()">${val}</textarea>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }
+
+  window.toggleActGroupUI = gId => {
+    const body = document.getElementById(gId);
+    const actId = gId.replace('ag_', '');
+    const chev = document.getElementById('agc_' + actId);
+    if (body) body.classList.toggle('collapsed');
+    if (chev) chev.classList.toggle('open', !body.classList.contains('collapsed'));
+  };
+
+  window.submitNewAct = wId => {
+    const nameEl = document.getElementById('ai_' + wId);
+    const projEl = document.getElementById('ap_' + wId);
+    if (!nameEl || !nameEl.value.trim()) return;
+    const name = nameEl.value.trim();
+    const projId = projEl ? projEl.value : (currentTab === 'maye' ? 'p1' : 's1');
+    const proj = PROJECTS.find(p => p.id === projId);
+    addCustomAct(currentTab, name, proj ? proj.color : '#4F8EF7', proj ? proj.name : name, wId, wId, 'media', '');
+    nameEl.value = '';
+  };
+
+  // Leyenda al cargar
+  window.addEventListener('DOMContentLoaded', () => {
+    render();
+    updateStats();
+  });
+
+</script>
+
+<style>
+  :root {
+    --bg:   #F5F4F0; --card: #FFFFFF; --sec: #F8F7F4; --head: #EFEDE8;
+    --b1:   #E0DDD6; --b2:   #D0CEC7; --b3:   #C0BEB7;
+    --t1:   #1A1916; --t2:   #6B6860; --t3:   #9E9C96;
+    --acc:  #1D9E75; --acc2: #5DCAA5; --acc3: #E1F5EE;
+    --r-sm: 7px; --r-md: 10px; --r-lg: 14px; --r-xl: 18px;
+    --ff:   'DM Sans', system-ui, sans-serif;
+    --fm:   'DM Mono', monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:#131210; --card:#1C1B19; --sec:#232220; --head:#282724;
+      --b1:#2E2D2A; --b2:#3A3835; --b3:#484643;
+      --t1:#F0EDE6; --t2:#A09D96; --t3:#6B6860;
+      --acc3:#04342C;
+    }
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--ff); background: var(--bg); color: var(--t1); min-height: 100vh; }
+
+  /* TOPBAR */
+  .topbar {
+    position: sticky; top: 0; z-index: 20;
+    background: var(--card); border-bottom: 1px solid var(--b1);
+    padding: 1rem 1.75rem;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 1rem; box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  }
+  .topbar-left h1 { font-size: 17px; font-weight: 600; letter-spacing: -.3px; }
+  .topbar-left p  { font-family: var(--fm); font-size: 11px; color: var(--t3); margin-top: 2px; }
+  .topbar-right   { display: flex; align-items: center; gap: 10px; }
+  #save-status    { font-family: var(--fm); font-size: 12px; display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+  .save-btn {
+    background: var(--acc); color: #fff; border: none;
+    padding: 8px 18px; border-radius: var(--r-md); font-size: 13px; font-weight: 500;
+    cursor: pointer; display: flex; align-items: center; gap: 7px; transition: opacity .15s;
+  }
+  .save-btn:hover { opacity: .88; }
+
+  /* TABS */
+  .tab-bar { display: flex; gap: 3px; background: var(--sec); border: 1px solid var(--b1); border-radius: var(--r-md); padding: 3px; }
+  .tab-btn { padding: 5px 14px; border-radius: 7px; font-size: 12px; font-weight: 500; border: none; background: transparent; color: var(--t2); cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all .15s; white-space: nowrap; }
+  .tab-btn:hover { background: var(--card); color: var(--t1); }
+  .tab-btn.active { background: var(--card); color: var(--t1); box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+  .tab-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+  /* CONTENT */
+  .content { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.75rem 3rem; }
+
+  /* NOTICE */
+  .firebase-notice {
+    background: #FFF9E6; border: 1px solid #EF9F27; border-radius: var(--r-lg);
+    padding: 12px 16px; margin-bottom: 1rem; font-size: 12px; color: #633806;
+    display: flex; align-items: flex-start; gap: 10px; line-height: 1.6;
+  }
+  .firebase-notice i { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+  .firebase-notice strong { font-weight: 600; display: block; margin-bottom: 2px; }
+  @media (prefers-color-scheme: dark) {
+    .firebase-notice { background: #2D1F00; border-color: #854F0B; color: #FAC775; }
+  }
+
+  /* KPIs */
+  .kpi-strip { display: grid; grid-template-columns: repeat(5,1fr); gap: 10px; margin-bottom: 1rem; }
+  .kpi { background: var(--card); border: 1px solid var(--b1); border-radius: var(--r-lg); padding: 13px 15px; display: flex; align-items: center; gap: 11px; position: relative; overflow: hidden; }
+  .kpi::after { content:''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+  .kpi.k-tl::after { background: #1D9E75; } .kpi.k-gn::after { background: #639922; }
+  .kpi.k-am::after { background: #EF9F27; } .kpi.k-rd::after { background: #E24B4A; }
+  .kpi.k-bl::after { background: #378ADD; }
+  .ki { width: 38px; height: 38px; border-radius: var(--r-md); display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+  .ki.tl{background:#E1F5EE;color:#0F6E56} .ki.gn{background:#EAF3DE;color:#3B6D11}
+  .ki.am{background:#FFF0CC;color:#7A4610} .ki.rd{background:#FCEBEB;color:#A32D2D} .ki.bl{background:#E6F1FB;color:#185FA5}
+  @media(prefers-color-scheme:dark){
+    .ki.tl{background:#04342C;color:#5DCAA5} .ki.gn{background:#173404;color:#97C459}
+    .ki.am{background:#3A2500;color:#FAC775} .ki.rd{background:#501313;color:#F09595} .ki.bl{background:#042C53;color:#85B7EB}
+  }
+  .kn { font-size: 22px; font-weight: 700; line-height: 1; }
+  .kl { font-family: var(--fm); font-size: 10px; color: var(--t3); margin-top: 2px; text-transform: uppercase; letter-spacing: .04em; }
+
+  /* PROGRESS CARD */
+  .prog-card { background: var(--card); border: 1px solid var(--b1); border-radius: var(--r-lg); padding: 13px 17px; margin-bottom: 1rem; }
+  .prog-meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--t2); margin-bottom: 12px; }
+  .prog-pct  { font-family: var(--fm); font-weight: 600; color: var(--acc); }
+  .prog-trk  { height: 7px; background: var(--b1); border-radius: 4px; overflow: hidden; margin-bottom: 14px; }
+  .prog-fill { height: 100%; background: linear-gradient(90deg, var(--acc), var(--acc2)); border-radius: 4px; transition: width .5s ease; }
+  .pb-row  { display: grid; grid-template-columns: minmax(200px,270px) 1fr 70px; gap: 12px; align-items: center; margin-bottom: 8px; }
+  .pb-name { font-size: 11px; display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .pb-name span:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pb-dot  { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+  .pb-track{ height: 6px; background: var(--b1); border-radius: 3px; overflow: hidden; }
+  .pb-fill { height: 100%; border-radius: 3px; transition: width .5s; }
+  .pb-num  { font-family: var(--fm); font-size: 10px; color: var(--t3); text-align: right; white-space: nowrap; }
+
+  /* LEGEND */
+  #legend { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 1.25rem; }
+  .leg { display: flex; align-items: center; gap: 5px; background: var(--card); border: 1px solid var(--b1); border-radius: 20px; padding: 3px 10px; font-size: 11px; color: var(--t2); }
+  .ldot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  /* WEEK CARD */
+  .week-card { background: var(--card); border: 1px solid var(--b1); border-radius: var(--r-xl); overflow: hidden; margin-bottom: 13px; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+  .week-head { display: flex; align-items: center; justify-content: space-between; padding: 13px 20px; background: var(--head); border-bottom: 1px solid var(--b1); cursor: pointer; user-select: none; transition: background .12s; }
+  .week-head:hover { background: var(--sec); }
+  .wh-left  { display: flex; align-items: center; gap: 13px; }
+  .wk-num   { min-width: 44px; height: 38px; border-radius: var(--r-md); background: var(--card); border: 1px solid var(--b1); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--acc); flex-shrink: 0; font-family: var(--fm); }
+  .wk-focus { font-size: 13px; font-weight: 600; }
+  .wk-dates { font-family: var(--fm); font-size: 10px; color: var(--t3); margin-top: 3px; }
+  .wk-dates i { font-size: 11px; margin-right: 3px; }
+  .wh-right { display: flex; align-items: center; gap: 10px; }
+  .week-mini-bar  { width: 70px; height: 4px; background: var(--b1); border-radius: 2px; overflow: hidden; }
+  .week-mini-fill { height: 100%; background: var(--acc); border-radius: 2px; transition: width .4s; }
+  .wpill    { font-family: var(--fm); font-size: 11px; padding: 3px 10px; border-radius: 20px; border: 1px solid var(--b1); color: var(--t3); background: var(--card); white-space: nowrap; }
+  .wpill.all-done { background: #EAF3DE; color: #27500A; border-color: #97C459; }
+  @media(prefers-color-scheme:dark){ .wpill.all-done{background:#173404;color:#C0DD97;border-color:#3B6D11} }
+  .wchev { font-size: 13px; color: var(--t3); transition: transform .2s; }
+  .wchev.open { transform: rotate(180deg); }
+
+  /* WEEK BODY */
+  .week-body { display: none; }
+  .week-body.open { display: block; }
+
+  /* TABLE HEADER */
+  .tbl-hdr { display: grid; grid-template-columns: 44px 1fr 110px 120px 100px 100px 44px; gap: 8px; padding: 7px 20px; background: var(--sec); border-bottom: 1px solid var(--b1); }
+  .tbl-hdr span { font-family: var(--fm); font-size: 10px; font-weight: 500; color: var(--t3); text-transform: uppercase; letter-spacing: .05em; display: flex; align-items: center; }
+
+  /* ACTIVITY GROUP */
+  .act-group { border-top: 1px solid var(--b1); }
+  .act-group-head { display: flex; align-items: center; gap: 9px; padding: 10px 20px; background: var(--sec); cursor: pointer; user-select: none; transition: background .12s; }
+  .act-group-head:hover { background: var(--head); }
+  .ag-dot   { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .ag-title { font-size: 12px; font-weight: 600; flex: 1; line-height: 1.4; }
+  .ag-prog  { font-family: var(--fm); font-size: 10px; color: var(--t3); white-space: nowrap; flex-shrink: 0; }
+  .proj-badge { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 20px; font-size: 10px; border: 1px solid transparent; white-space: nowrap; flex-shrink: 0; }
+  .pd { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .act-group-body { display: block; }
+  .act-group-body.collapsed { display: none; }
+
+  /* TASK ROW */
+  .trow { display: grid; grid-template-columns: 44px 1fr 110px 120px 100px 100px 44px; gap: 8px; padding: 9px 20px; border-bottom: 1px solid var(--b1); align-items: start; transition: background .1s; }
+  .trow:last-of-type { border-bottom: none; }
+  .trow:hover { background: var(--sec); }
+  .trow.done-row { opacity: .45; }
+  .trow.is-sub { padding-left: 44px; background: rgba(0,0,0,.015); }
+  .trow.act-summary-row { background: rgba(0,0,0,.02); }
+  .tc { display: flex; align-items: center; justify-content: center; }
+  .tname    { font-size: 12px; line-height: 1.5; }
+  .striked  { text-decoration: line-through; }
+  .sub-lbl  { font-size: 10px; color: var(--t3); margin-top: 2px; }
+
+  /* CHECKBOX */
+  .chkbox { width: 22px; height: 22px; border-radius: 6px; border: 1.5px solid var(--b2); cursor: pointer; display: flex; align-items: center; justify-content: center; background: var(--card); transition: all .15s; flex-shrink: 0; }
+  .chkbox i { font-size: 11px; color: #fff; display: none; }
+  .chkbox.on { background: var(--acc); border-color: var(--acc); }
+  .chkbox.on i { display: block; }
+
+  /* SUB STATUS */
+  .sub-status { font-family: var(--fm); font-size: 10px; padding: 2px 8px; border-radius: 20px; border: 1px solid; text-align: center; white-space: nowrap; }
+  .st-done { background: #EAF3DE; color: #27500A; border-color: #97C459; }
+  .st-pend { background: var(--sec); color: var(--t3); border-color: var(--b1); }
+  @media(prefers-color-scheme:dark){
+    .st-done{background:#173404;color:#C0DD97;border-color:#3B6D11}
+  }
+
+  /* PRIORITY SELECT */
+  .psel { width: 100%; padding: 5px 6px; border-radius: var(--r-md); font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid; appearance: none; outline: none; text-align: center; }
+  .p-alta  { background: #FCEBEB; color: #A32D2D; border-color: #F09595; }
+  .p-media { background: #FAEEDA; color: #7A4610; border-color: #EF9F27; }
+  .p-baja  { background: #EAF3DE; color: #27500A; border-color: #97C459; }
+  @media(prefers-color-scheme:dark){
+    .p-alta {background:#501313;color:#F7C1C1;border-color:#A32D2D}
+    .p-media{background:#412402;color:#FAC775;border-color:#854F0B}
+    .p-baja {background:#173404;color:#C0DD97;border-color:#3B6D11}
+  }
+
+  /* STATUS SELECT */
+  .stsel { width: 100%; padding: 5px 6px; border-radius: var(--r-md); font-size: 10px; cursor: pointer; border: 1px solid; appearance: none; outline: none; text-align: center; }
+  .st-pendiente  { background: var(--sec); color: var(--t2); border-color: var(--b1); }
+  .st-en-proceso { background: #E6F1FB; color: #185FA5; border-color: #85B7EB; }
+  .st-completado { background: #EAF3DE; color: #27500A; border-color: #97C459; }
+  .st-bloqueado  { background: #FCEBEB; color: #A32D2D; border-color: #F09595; }
+  @media(prefers-color-scheme:dark){
+    .st-en-proceso{background:#042C53;color:#85B7EB;border-color:#185FA5}
+    .st-completado{background:#173404;color:#C0DD97;border-color:#3B6D11}
+    .st-bloqueado {background:#501313;color:#F09595;border-color:#A32D2D}
+  }
+
+  /* DATE INPUT */
+  .din { width: 100%; padding: 5px 6px; border: 1px solid var(--b1); border-radius: var(--r-md); font-family: var(--fm); font-size: 11px; background: var(--card); color: var(--t1); cursor: pointer; outline: none; }
+  .din:focus { border-color: var(--acc); }
+
+  /* DELETE BTN */
+  .delbtn { width: 28px; height: 28px; border: 1px solid var(--b1); border-radius: var(--r-md); background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--t3); transition: all .15s; flex-shrink: 0; }
+  .delbtn:hover { border-color: #F09595; color: #A32D2D; background: #FCEBEB; }
+
+  /* OBSERVATIONS */
+  .obs-section { padding: 12px 20px 16px; background: rgba(0,0,0,.02); border-top: 1px solid var(--b1); }
+  .obs-section-title { font-family: var(--fm); font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; color: var(--t3); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .obs-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .obs-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .obs-box { border-radius: var(--r-md); overflow: hidden; border: 1px solid var(--b1); }
+  .obs-box-head { padding: 7px 12px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; display: flex; align-items: center; gap: 5px; border-bottom: 1px solid var(--b1); }
+  .obs-box.maye  .obs-box-head { background: #E6F1FB22; color: #185FA5; }
+  .obs-box.luisa .obs-box-head { background: #EEEDFE22; color: #3C3489; }
+  .obs-box.seba  .obs-box-head { background: #E1F5EE22; color: #0F6E56; }
+  .obs-box.sup   .obs-box-head { background: #FFF9E622; color: #7A4610; }
+  .obs-ta { width: 100%; min-height: 70px; padding: 9px 12px; border: none; background: var(--card); color: var(--t1); font-size: 11px; font-family: var(--ff); resize: vertical; outline: none; line-height: 1.6; }
+  .obs-ta::placeholder { color: var(--t3); }
+
+  /* ADD ROWS */
+  .add-row { display: flex; gap: 8px; align-items: center; padding: 11px 20px; background: var(--sec); border-top: 1px dashed var(--b1); }
+  .add-sub-row { display: flex; gap: 8px; align-items: center; padding: 8px 20px 8px 44px; background: rgba(0,0,0,.015); border-top: 1px dashed var(--b1); }
+  .add-in { flex: 1; padding: 7px 10px; border: 1px solid var(--b1); border-radius: var(--r-md); font-size: 12px; background: var(--card); color: var(--t1); outline: none; font-family: var(--ff); }
+  .add-in:focus { border-color: var(--acc); }
+  .add-ps { padding: 7px 8px; border: 1px solid var(--b1); border-radius: var(--r-md); font-size: 11px; background: var(--card); color: var(--t1); cursor: pointer; outline: none; width: 140px; }
+  .add-btn { padding: 7px 14px; border: 1px solid var(--b1); border-radius: var(--r-md); font-size: 12px; font-weight: 500; cursor: pointer; background: var(--card); color: var(--t2); display: flex; align-items: center; gap: 5px; transition: all .15s; white-space: nowrap; }
+  .add-btn:hover { border-color: var(--acc); color: var(--t1); background: var(--acc3); }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    .kpi-strip { grid-template-columns: repeat(3,1fr); }
+    .tbl-hdr,.trow { grid-template-columns: 36px 1fr 90px 90px 80px 80px 36px; gap: 5px; padding: 8px 14px; }
+    .obs-grid-3 { grid-template-columns: 1fr; }
+    .pb-row { grid-template-columns: 1fr 1fr 50px; }
+  }
+  @media (max-width: 640px) {
+    .topbar { padding: .875rem 1rem; flex-wrap: wrap; }
+    .content { padding: 1rem 1rem 2rem; }
+    .kpi-strip { grid-template-columns: repeat(2,1fr); }
+    .obs-grid-2 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="topbar-left">
+    <h1>Cronograma — Equipo Apoyo a la Supervisión</h1>
+    <p>DTZ · Colaborativo en tiempo real · Mayo → Agosto 2026</p>
+  </div>
+  <div class="topbar-right">
+    <!-- TABS -->
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchTab('maye')" id="tab-maye">
+        <span class="tab-dot" style="background:#378ADD"></span> Maye &amp; Luisa
+      </button>
+      <button class="tab-btn" onclick="switchTab('seba')" id="tab-seba">
+        <span class="tab-dot" style="background:#1D9E75"></span> Sebastián
+      </button>
+    </div>
+    <!-- ESTADO SYNC -->
+    <span id="save-status">
+      <i class="fa-solid fa-circle-notch fa-spin" style="color:#9E9C96"></i>
+      <span style="color:#9E9C96;font-size:12px">Conectando…</span>
+    </span>
+    <!-- BOTÓN GUARDAR -->
+    <button class="save-btn" onclick="saveAllManual()">
+      <i class="fa-solid fa-cloud-arrow-up"></i> Guardar todo
+    </button>
+  </div>
+</header>
+
+<div class="content">
+
+  <!-- AVISO FIREBASE -->
+  <div class="firebase-notice" id="fb-notice">
+    <i class="fa-solid fa-triangle-exclamation"></i>
+    <div>
+      <strong>Configure Firebase antes de publicar</strong>
+      Abra este archivo con el Bloc de notas, busque la sección
+      <code style="background:#FFF0C0;padding:1px 5px;border-radius:3px;font-size:11px">PEGUE AQUÍ SUS CLAVES DE FIREBASE</code>
+      y reemplace cada <code style="background:#FFF0C0;padding:1px 5px;border-radius:3px;font-size:11px">PEGAR_AQUI_...</code>
+      con los valores de su proyecto Firebase. Luego suba a GitHub / Firebase Hosting.
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-strip">
+    <div class="kpi k-tl"><div class="ki tl"><i class="fa-solid fa-list-check"></i></div><div><div class="kn" id="k-total">—</div><div class="kl">Subactividades</div></div></div>
+    <div class="kpi k-gn"><div class="ki gn"><i class="fa-solid fa-circle-check"></i></div><div><div class="kn" id="k-done">—</div><div class="kl">Completadas</div></div></div>
+    <div class="kpi k-am"><div class="ki am"><i class="fa-solid fa-hourglass-half"></i></div><div><div class="kn" id="k-pend">—</div><div class="kl">Pendientes</div></div></div>
+    <div class="kpi k-rd"><div class="ki rd"><i class="fa-solid fa-triangle-exclamation"></i></div><div><div class="kn" id="k-alta">—</div><div class="kl">Prioridad Alta</div></div></div>
+    <div class="kpi k-bl"><div class="ki bl"><i class="fa-solid fa-chart-pie"></i></div><div><div class="kn" id="k-pct">—</div><div class="kl">Cumplimiento</div></div></div>
+  </div>
+
+  <!-- PROGRESO GENERAL -->
+  <div class="prog-card">
+    <div class="prog-meta">
+      <span>Progreso general</span>
+      <span class="prog-pct" id="prog-txt">Cargando…</span>
+    </div>
+    <div class="prog-trk"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+    <div id="prog-bars" style="margin-top:12px"></div>
+  </div>
+
+  <!-- LEYENDA -->
+  <div id="legend"></div>
+
+  <!-- SEMANAS -->
+  <div id="weeks-root">
+    <div style="text-align:center;padding:3rem;color:#9E9C96;font-size:13px">
+      <i class="fa-solid fa-circle-notch fa-spin" style="font-size:22px;display:block;margin-bottom:8px"></i>
+      Cargando datos desde Firebase…
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
